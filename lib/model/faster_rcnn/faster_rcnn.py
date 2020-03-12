@@ -42,21 +42,17 @@ class _fasterRCNN(nn.Module):
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
 
-        # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
-        rois = np.array((im_data.shape[0], gt_boxes.shape[0], gt_boxes.shape[1]+1))
-        rois[:, :, 1:] = gt_boxes
+        rois = np.zeros(gt_boxes.shape)
+        rois[:, :, 1:] = gt_boxes[:, :, :4]
         rois = torch.from_numpy(rois).float().cuda()
         rois = Variable(rois)
         # do roi pooling based on predicted rois
         pooled_feat = self.RCNN_roi_align(base_feat, rois.view(-1, 5))
-
-        # feed pooled features to top model
-        pooled_feat = self._head_to_tail(pooled_feat)
+        pooled_feat = self._head_to_tail_no_avg(pooled_feat)
 
         return pooled_feat
-
 
     def forward(self, im_data, im_info, gt_boxes, num_boxes):
         batch_size = im_data.size(0)
@@ -70,8 +66,6 @@ class _fasterRCNN(nn.Module):
 
         # feed base feature map to RPN to obtain rois
         rois, rpn_loss_cls, rpn_loss_bbox = self.RCNN_rpn(base_feat, im_info, gt_boxes, num_boxes)
-        print(rois.shape)
-        print(rois[0, 0])
 
         # if it is training phase, then use ground truth bboxes for refining
         if self.training:
@@ -130,7 +124,6 @@ class _fasterRCNN(nn.Module):
 
             # bounding box regression L1 loss
             RCNN_loss_bbox = _smooth_l1_loss(bbox_pred, rois_target, rois_inside_ws, rois_outside_ws)
-
 
         cls_prob = cls_prob.view(batch_size, rois.size(1), -1)
         bbox_pred = bbox_pred.view(batch_size, rois.size(1), -1)

@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import _init_paths
 import os
+import math
 import sys
 import pickle
 import json
@@ -227,8 +228,10 @@ if __name__ == '__main__':
         split = 'training'
     anno_root = os.path.join(args.data_root, 'anno_with_pose', split)
 
-    pool_feat_size = 7
+    pool_feat_size = 4
+    pool_feat_chnl = 2048
     body_part_num = 6
+    seg_len = 10
 
     for pkg_id in tqdm(os.listdir(image_root)):
         pkg_root = os.path.join(image_root, pkg_id)
@@ -244,6 +247,7 @@ if __name__ == '__main__':
 
             frm_list = sorted(os.listdir(vid_frm_dir))
             num_frames = len(frm_list)
+            num_segs = math.ceil(num_frames * 1.0 / seg_len)
 
             tid2feat = {}
             tid2cate = {}
@@ -251,22 +255,27 @@ if __name__ == '__main__':
             traj_info_list = vid_anno['subject/objects']
             for traj_info in traj_info_list:
                 tid2cate[traj_info['tid']] = traj_info['category']
-                stt_fid = traj_info['start_fid']
-                end_fid = traj_info['end_fid']
                 if is_human(traj_info['category']):
-                    tid2feat[traj_info['tid']] = np.zeros((num_frames,
+                    tid2feat[traj_info['tid']] = np.zeros((num_segs,
                                                            1 + body_part_num,
-                                                           pool_feat_size * pool_feat_size))
+                                                           pool_feat_chnl,
+                                                           pool_feat_size,
+                                                           pool_feat_size))
                 else:
                     tid2feat[traj_info['tid']] = np.zeros((num_frames, 1,
-                                                           pool_feat_size * pool_feat_size))
+                                                           pool_feat_chnl,
+                                                           pool_feat_size,
+                                                           pool_feat_size))
 
             trajs = vid_anno['trajectories']
             for frm_idx in range(num_frames):
+                seg_idx = frm_idx / seg_len
+
                 boxes = [[frm_det['bbox']['xmin'],
                           frm_det['bbox']['ymin'],
                           frm_det['bbox']['xmax'],
-                          frm_det['bbox']['ymax']]
+                          frm_det['bbox']['ymax'],
+                          1.0]
                          for frm_det in trajs[frm_idx]]
                 tids = [frm_det['tid'] for frm_det in trajs[frm_idx]]
                 cates = [tid2cate[tid] for tid in tids]
@@ -276,7 +285,8 @@ if __name__ == '__main__':
                     if is_human(cates[box_ind]):
                         kps = trajs[frm_idx][box_ind]['kps']
                         if kps is not None:
-                            pboxes = gen_part_boxes(boxes[box_ind], kps, [height, width])
+                            kps_np = np.array(kps).reshape((17, 3))
+                            pboxes = gen_part_boxes(boxes[box_ind][:4], kps, [height, width])
                             boxes += pboxes
                             has_kps[box_ind] = True
                 boxes = np.array(boxes)
@@ -294,7 +304,7 @@ if __name__ == '__main__':
                 assert len(im_scales) == 1, "Only single-image batch implemented"
                 im_blob = blobs
                 im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
-                boxes = boxes * im_scales[0]
+                boxes = boxes[:, :4] * im_scales[0]
                 boxes = boxes[np.newaxis, :, :]
 
                 im_data_pt = torch.from_numpy(im_blob)
@@ -308,7 +318,7 @@ if __name__ == '__main__':
                 num_boxes.data.resize_(1).zero_()
 
                 pool5 = fasterRCNN.get_pool5(im_data, im_info, gt_boxes, num_boxes)
-                pool5 = pool5[0].cpu().numpy()
+                pool5 = pool5.cpu().numpy()
 
                 num_entity = len(has_kps)
                 human_with_kps_cnt = 0
@@ -326,7 +336,7 @@ if __name__ == '__main__':
                             body_part_feats = np.zeros((body_part_num, pool_feat_size * pool_feat_size))
                             entity_feat = np.concatenate((entity_feat, body_part_feats))
 
-                    tid2feat[tids[ii]][frm_idx] = entity_feat
+                    tid2feat[tids[ii]][seg_idx] = np.maximum(entity_feat, tid2feat[tids[ii]][seg_idx])
 
             output_dir = os.path.join(feat_root, pkg_id, vid_id)
             if not os.path.exists(output_dir):
@@ -334,7 +344,8 @@ if __name__ == '__main__':
 
             for tid in tid2feat:
                 with open(str(tid)+'.bin', 'wb') as f:
-                    pickle.dump(tid2feat[tid], f)
+                    feat = tid2feat[tid].mean(4).mean(3)
+                    pickle.dump(feat, f)
 
 
 
