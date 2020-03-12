@@ -3,6 +3,7 @@ data/*
 models/
 *.pth
 data/
+idea/
 
 # READ THIS BEFORE YOU REFACTOR ME
 #
