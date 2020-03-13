@@ -69,7 +69,7 @@ def parse_args():
                         help='directory to load images for demo',
                         default="data/vidor_hoid_mini")
     parser.add_argument('--split', dest='split',
-                        default="val")
+                        default="train")
     parser.add_argument('--cuda', dest='cuda',
                         default=True,
                         help='whether use CUDA',
@@ -92,9 +92,9 @@ def parse_args():
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
                         default=9771, type=int)
-    parser.add_argument('--bs', dest='batch_size',
-                        help='batch_size',
-                        default=1, type=int)
+    parser.add_argument('--r', dest='resume',
+                        help='resume checkpoint or not',
+                        default=False, type=bool)
 
     args = parser.parse_args()
     return args
@@ -233,10 +233,20 @@ if __name__ == '__main__':
     body_part_num = 6
     seg_len = 10
 
-    for pkg_id in tqdm(os.listdir(image_root)):
+    print('feature extracting ...')
+    for pkg_id in os.listdir(image_root):
         pkg_root = os.path.join(image_root, pkg_id)
 
         for vid_id in os.listdir(pkg_root):
+
+            output_dir = os.path.join(feat_root, pkg_id, vid_id)
+
+            if args.resume and os.path.exists(output_dir):
+                continue
+
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
             vid_frm_dir = os.path.join(pkg_root, vid_id)
             vid_frm_anno_file_path = os.path.join(anno_root, pkg_id, vid_id+'.json')
             with open(vid_frm_anno_file_path) as f:
@@ -246,8 +256,8 @@ if __name__ == '__main__':
             height = vid_anno['height']
 
             frm_list = sorted(os.listdir(vid_frm_dir))
-            num_frames = len(frm_list)
-            num_segs = math.ceil(num_frames * 1.0 / seg_len)
+            num_frames = vid_anno['frame_count']
+            num_segs = int(math.ceil(num_frames * 1.0 / seg_len))
 
             tid2feat = {}
             tid2cate = {}
@@ -269,8 +279,7 @@ if __name__ == '__main__':
 
             trajs = vid_anno['trajectories']
             for frm_idx in range(num_frames):
-                seg_idx = frm_idx / seg_len
-
+                seg_idx = int(frm_idx / seg_len)
                 boxes = [[frm_det['bbox']['xmin'],
                           frm_det['bbox']['ymin'],
                           frm_det['bbox']['xmax'],
@@ -286,7 +295,7 @@ if __name__ == '__main__':
                         kps = trajs[frm_idx][box_ind]['kps']
                         if kps is not None:
                             kps_np = np.array(kps).reshape((17, 3))
-                            pboxes = gen_part_boxes(boxes[box_ind][:4], kps, [height, width])
+                            pboxes = gen_part_boxes(boxes[box_ind][:4], kps_np, [height, width])
                             boxes += pboxes
                             has_kps[box_ind] = True
                 boxes = np.array(boxes)
@@ -304,7 +313,7 @@ if __name__ == '__main__':
                 assert len(im_scales) == 1, "Only single-image batch implemented"
                 im_blob = blobs
                 im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
-                boxes = boxes[:, :4] * im_scales[0]
+                boxes[:, :4] = boxes[:, :4] * im_scales[0]
                 boxes = boxes[np.newaxis, :, :]
 
                 im_data_pt = torch.from_numpy(im_blob)
@@ -318,7 +327,7 @@ if __name__ == '__main__':
                 num_boxes.data.resize_(1).zero_()
 
                 pool5 = fasterRCNN.get_pool5(im_data, im_info, gt_boxes, num_boxes)
-                pool5 = pool5.cpu().numpy()
+                pool5 = pool5.cpu().data.numpy()
 
                 num_entity = len(has_kps)
                 human_with_kps_cnt = 0
@@ -333,18 +342,22 @@ if __name__ == '__main__':
                             entity_feat = np.concatenate((entity_feat, body_part_feats))
                             human_with_kps_cnt += 1
                         else:
-                            body_part_feats = np.zeros((body_part_num, pool_feat_size * pool_feat_size))
+                            body_part_feats = np.zeros((body_part_num,
+                                                        pool_feat_chnl,
+                                                        pool_feat_size,
+                                                        pool_feat_size))
                             entity_feat = np.concatenate((entity_feat, body_part_feats))
 
-                    tid2feat[tids[ii]][seg_idx] = np.maximum(entity_feat, tid2feat[tids[ii]][seg_idx])
-
-            output_dir = os.path.join(feat_root, pkg_id, vid_id)
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
+                    entity_feat0 = tid2feat[tids[ii]][seg_idx]
+                    entity_feat = np.maximum(entity_feat, entity_feat0)
+                    tid2feat[tids[ii]][seg_idx] = entity_feat
 
             for tid in tid2feat:
-                with open(str(tid)+'.bin', 'wb') as f:
+                print('%s/%s/%s' % (pkg_id, vid_id, str(tid)))
+                output_path = os.path.join(output_dir, str(tid)+'.bin')
+                with open(output_path, 'wb') as f:
                     feat = tid2feat[tid].mean(4).mean(3)
+                    # print(feat.shape)
                     pickle.dump(feat, f)
 
 
