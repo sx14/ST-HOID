@@ -238,9 +238,9 @@ if __name__ == '__main__':
         pkg_root = os.path.join(image_root, pkg_id)
 
         for vid_id in os.listdir(pkg_root):
+            print('[%s/%s]' % (pkg_id, vid_id))
 
             output_dir = os.path.join(feat_root, pkg_id, vid_id)
-
             if args.resume and os.path.exists(output_dir):
                 continue
 
@@ -298,7 +298,10 @@ if __name__ == '__main__':
                             pboxes = gen_part_boxes(boxes[box_ind][:4], kps_np, [height, width])
                             boxes += pboxes
                             has_kps[box_ind] = True
-                boxes = np.array(boxes)
+
+                if len(boxes) == 0:
+                    continue
+
                 # Load the demo image
                 im_file = os.path.join(vid_frm_dir, frm_list[frm_idx])
                 im_in = np.array(imread(im_file))
@@ -313,6 +316,9 @@ if __name__ == '__main__':
                 assert len(im_scales) == 1, "Only single-image batch implemented"
                 im_blob = blobs
                 im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
+
+                # resize boxes
+                boxes = np.array(boxes)
                 boxes[:, :4] = boxes[:, :4] * im_scales[0]
                 boxes = boxes[np.newaxis, :, :]
 
@@ -353,7 +359,6 @@ if __name__ == '__main__':
                     tid2feat[tids[ii]][seg_idx] = entity_feat
 
             for tid in tid2feat:
-                print('%s/%s/%s' % (pkg_id, vid_id, str(tid)))
                 output_path = os.path.join(output_dir, str(tid)+'.bin')
                 with open(output_path, 'wb') as f:
                     feat = tid2feat[tid].mean(4).mean(3)
