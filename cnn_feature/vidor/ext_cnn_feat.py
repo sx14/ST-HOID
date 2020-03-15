@@ -50,10 +50,10 @@ def parse_args():
     Parse input arguments
     """
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
-    parser.add_argument('--dataset', dest='dataset',
-                        help='training dataset',
+    parser.add_argument('--datasets', dest='datasets',
+                        help='training datasets',
                         default='coco', type=str)
-    parser.add_argument('--cfg', dest='cfg_file',
+    parser.add_argument('--cfgs', dest='cfg_file',
                         help='optional config file',
                         default='cfgs/res101.yml', type=str)
     parser.add_argument('--net', dest='net',
@@ -67,7 +67,7 @@ def parse_args():
                         default="models")
     parser.add_argument('--data_root', dest='data_root',
                         help='directory to load images for demo',
-                        default="data/vidor_hoid_mini")
+                        default="../data/vidor_hoid_mini")
     parser.add_argument('--split', dest='split',
                         default="train")
     parser.add_argument('--cuda', dest='cuda',
@@ -81,10 +81,10 @@ def parse_args():
                         help='whether perform class_agnostic bbox regression',
                         action='store_true')
     parser.add_argument('--parallel_type', dest='parallel_type',
-                        help='which part of model to parallel, 0: all, 1: model before roi pooling',
+                        help='which part of models to parallel, 0: all, 1: models before roi pooling',
                         default=0, type=int)
     parser.add_argument('--checksession', dest='checksession',
-                        help='checksession to load model',
+                        help='checksession to load models',
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
@@ -187,11 +187,11 @@ if __name__ == '__main__':
         checkpoint = torch.load(load_name)
     else:
         checkpoint = torch.load(load_name, map_location=(lambda storage, loc: storage))
-    fasterRCNN.load_state_dict(checkpoint['model'])
+    fasterRCNN.load_state_dict(checkpoint['models'])
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
-    print('load model successfully!')
+    print('load models successfully!')
 
     # initilize the tensor holder here.
     im_data = torch.FloatTensor(1)
@@ -361,8 +361,7 @@ if __name__ == '__main__':
             for tid in tid2feat:
                 output_path = os.path.join(output_dir, str(tid)+'.bin')
                 with open(output_path, 'wb') as f:
-                    feat = tid2feat[tid].mean(4).mean(3)
-                    # print(feat.shape)
+                    feat = tid2feat[tid].mean(4).mean(3).astype('float32')
                     pickle.dump(feat, f)
 
 

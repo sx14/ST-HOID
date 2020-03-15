@@ -33,7 +33,7 @@ class imdb(object):
     self._obj_proposer = 'gt'
     self._roidb = None
     self._roidb_handler = self.default_roidb
-    # Use this dict for storing dataset specific config options
+    # Use this dict for storing datasets specific config options
     self.config = {}
 
   @property

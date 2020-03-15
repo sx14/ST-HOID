@@ -38,8 +38,8 @@ def parse_args():
   Parse input arguments
   """
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
-  parser.add_argument('--dataset', dest='dataset',
-                      help='training dataset',
+  parser.add_argument('--datasets', dest='datasets',
+                      help='training datasets',
                       default='pascal_voc', type=str)
   parser.add_argument('--net', dest='net',
                     help='vgg16, res101',
@@ -98,18 +98,18 @@ def parse_args():
                       help='training session',
                       default=1, type=int)
 
-# resume trained model
+# resume trained models
   parser.add_argument('--r', dest='resume',
                       help='resume checkpoint or not',
                       default=False, type=bool)
   parser.add_argument('--checksession', dest='checksession',
-                      help='checksession to load model',
+                      help='checksession to load models',
                       default=1, type=int)
   parser.add_argument('--checkepoch', dest='checkepoch',
-                      help='checkepoch to load model',
+                      help='checkepoch to load models',
                       default=1, type=int)
   parser.add_argument('--checkpoint', dest='checkpoint',
-                      help='checkpoint to load model',
+                      help='checkpoint to load models',
                       default=0, type=int)
 # log and display
   parser.add_argument('--use_tfb', dest='use_tfboard',
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
   lr = cfg.TRAIN.LEARNING_RATE
   lr = args.lr
-  #tr_momentum = cfg.TRAIN.MOMENTUM
+  #tr_momentum = cfgs.TRAIN.MOMENTUM
   #tr_momentum = args.momentum
 
   params = []
@@ -279,7 +279,7 @@ if __name__ == '__main__':
     checkpoint = torch.load(load_name)
     args.session = checkpoint['session']
     args.start_epoch = checkpoint['epoch']
-    fasterRCNN.load_state_dict(checkpoint['model'])
+    fasterRCNN.load_state_dict(checkpoint['models'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     lr = optimizer.param_groups[0]['lr']
     if 'pooling_mode' in checkpoint.keys():
@@ -373,12 +373,12 @@ if __name__ == '__main__':
     save_checkpoint({
       'session': args.session,
       'epoch': epoch + 1,
-      'model': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
+      'models': fasterRCNN.module.state_dict() if args.mGPUs else fasterRCNN.state_dict(),
       'optimizer': optimizer.state_dict(),
       'pooling_mode': cfg.POOLING_MODE,
       'class_agnostic': args.class_agnostic,
     }, save_name)
-    print('save model: {}'.format(save_name))
+    print('save models: {}'.format(save_name))
 
   if args.use_tfboard:
     logger.close()

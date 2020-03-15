@@ -114,8 +114,8 @@ class custom_build_ext(build_ext):
 
 ext_modules = [
     Extension(
-        "model.utils.cython_bbox",
-        ["model/utils/bbox.pyx"],
+        "models.utils.cython_bbox",
+        ["models/utils/bbox.pyx"],
         extra_compile_args={'gcc': ["-Wno-cpp", "-Wno-unused-function"]},
         include_dirs=[numpy_include]
     ),

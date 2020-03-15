@@ -16,10 +16,10 @@ except NameError:
 
 
 class COCOeval:
-    # Interface for evaluating detection on the Microsoft COCO dataset.
+    # Interface for evaluating detection on the Microsoft COCO datasets.
     #
     # The usage for CocoEval is as follows:
-    #  cocoGt=..., cocoDt=...       # load dataset and results
+    #  cocoGt=..., cocoDt=...       # load datasets and results
     #  E = CocoEval(cocoGt,cocoDt); # initialize CocoEval object
     #  E.params.recThrs = ...;      # set parameters as desired
     #  E.evaluate();                # run per image evaluation

@@ -2,9 +2,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 __author__ = 'tylin'
 __version__ = '1.0.1'
-# Interface for accessing the Microsoft COCO dataset.
+# Interface for accessing the Microsoft COCO datasets.
 
-# Microsoft COCO is a large image dataset designed for object detection,
+# Microsoft COCO is a large image datasets designed for object detection,
 # segmentation, and caption generation. pycocotools is a Python API that
 # assists in loading, parsing and visualizing the annotations in COCO.
 # Please visit http://mscoco.org/ for more information on COCO, including
@@ -72,7 +72,7 @@ class COCO:
         :param image_folder (str): location to the folder that hosts images.
         :return:
         """
-        # load dataset
+        # load datasets
         self.dataset = {}
         self.anns = []
         self.imgToAnns = {}
@@ -292,8 +292,8 @@ class COCO:
         """
         res = COCO()
         res.dataset['images'] = [img for img in self.dataset['images']]
-        # res.dataset['info'] = copy.deepcopy(self.dataset['info'])
-        # res.dataset['licenses'] = copy.deepcopy(self.dataset['licenses'])
+        # res.datasets['info'] = copy.deepcopy(self.datasets['info'])
+        # res.datasets['licenses'] = copy.deepcopy(self.datasets['licenses'])
 
         print('Loading and preparing results...     ')
         tic = time.time()

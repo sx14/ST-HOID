@@ -137,7 +137,7 @@ class vg(imdb):
 
     def _load_image_set_index(self):
         """
-        Load the indexes listed in this dataset's image set file.
+        Load the indexes listed in this datasets's image set file.
         """
         training_split_file = self._image_split_path()
         assert os.path.exists(training_split_file), \

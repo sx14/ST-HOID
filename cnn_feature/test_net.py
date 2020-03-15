@@ -45,10 +45,10 @@ def parse_args():
   Parse input arguments
   """
   parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
-  parser.add_argument('--dataset', dest='dataset',
-                      help='training dataset',
+  parser.add_argument('--datasets', dest='datasets',
+                      help='training datasets',
                       default='pascal_voc', type=str)
-  parser.add_argument('--cfg', dest='cfg_file',
+  parser.add_argument('--cfgs', dest='cfg_file',
                       help='optional config file',
                       default='cfgs/vgg16.yml', type=str)
   parser.add_argument('--net', dest='net',
@@ -73,10 +73,10 @@ def parse_args():
                       help='whether perform class_agnostic bbox regression',
                       action='store_true')
   parser.add_argument('--parallel_type', dest='parallel_type',
-                      help='which part of model to parallel, 0: all, 1: model before roi pooling',
+                      help='which part of models to parallel, 0: all, 1: models before roi pooling',
                       default=0, type=int)
   parser.add_argument('--checksession', dest='checksession',
-                      help='checksession to load model',
+                      help='checksession to load models',
                       default=1, type=int)
   parser.add_argument('--checkepoch', dest='checkepoch',
                       help='checkepoch to load network',
@@ -165,12 +165,12 @@ if __name__ == '__main__':
 
   print("load checkpoint %s" % (load_name))
   checkpoint = torch.load(load_name)
-  fasterRCNN.load_state_dict(checkpoint['model'])
+  fasterRCNN.load_state_dict(checkpoint['models'])
   if 'pooling_mode' in checkpoint.keys():
     cfg.POOLING_MODE = checkpoint['pooling_mode']
 
 
-  print('load model successfully!')
+  print('load models successfully!')
   # initilize the tensor holder here.
   im_data = torch.FloatTensor(1)
   im_info = torch.FloatTensor(1)
