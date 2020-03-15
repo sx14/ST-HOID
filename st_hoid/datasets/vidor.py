@@ -11,18 +11,20 @@ from torch.utils.data import Dataset
 
 
 class VidOR(Dataset):
-    def __init__(self, dataset_root, split):
+    def __init__(self, ds_name, ds_root, split, cache_root):
 
         self.val_ratio = 0.1
-        self.dataset_root = dataset_root
+        self.dataset_name = ds_name
+        self.dataset_root = ds_root
+        self.cache_root = cache_root
         if split == 'train':
-            self.feat_root = os.path.join(dataset_root, 'feat', 'train')
-            self.data_root = os.path.join(dataset_root, 'Data', 'VID', 'train')
-            self.anno_root = os.path.join(dataset_root, 'anno_with_pose', 'training')
+            self.feat_root = os.path.join(ds_root, 'feat', 'train')
+            self.data_root = os.path.join(ds_root, 'Data', 'VID', 'train')
+            self.anno_root = os.path.join(ds_root, 'anno_with_pose', 'training')
         elif split == 'val':
-            self.feat_root = os.path.join(dataset_root, 'feat', 'val')
-            self.data_root = os.path.join(dataset_root, 'Data', 'VID', 'val')
-            self.anno_root = os.path.join(dataset_root, 'anno_with_pose', 'validation')
+            self.feat_root = os.path.join(ds_root, 'feat', 'val')
+            self.data_root = os.path.join(ds_root, 'Data', 'VID', 'val')
+            self.anno_root = os.path.join(ds_root, 'anno_with_pose', 'validation')
         else:
             print('split = "train" or "val"')
             exit(-1)
@@ -276,7 +278,7 @@ class VidOR(Dataset):
 
     def _load_annotations(self):
 
-        cache_path = 'data_cache.bin'
+        cache_path = os.path.join(self.cache_root, '%s_anno_cache.bin' % self.dataset_name)
         if os.path.exists(cache_path):
             print('%s found! loading ...' % cache_path)
             with open(cache_path) as f:
@@ -308,11 +310,10 @@ class VidOR(Dataset):
                             'vid_id': vid_id,
                             'pkg_id': pkg_id}
                 tid2traj, tid2dur = self._load_trajectories(vid_anno['trajectories'], vid_info)
-                pos_insts = self._gen_positive_instances(vid_anno['relation_instances'], pkg_id, vid_id)
                 tid2cate_idx = {traj_info['tid']: self.obj_cate2idx[traj_info['category']]
                                 for traj_info in vid_anno['subject/objects']}
-                neg_insts = self._gen_negative_instances(vid_anno['relation_instances'],
-                                                         tid2dur, tid2cate_idx, pkg_id, vid_id)
+                pos_insts = self._gen_positive_instances(vid_anno['relation_instances'], pkg_id, vid_id)
+                neg_insts = self._gen_negative_instances(vid_anno['relation_instances'], tid2dur, tid2cate_idx, pkg_id, vid_id)
                 vid_insts = pos_insts + neg_insts[:3 * len(pos_insts)]
                 shuffle(vid_insts)
                 self.all_vid_info[vid_id] = vid_info

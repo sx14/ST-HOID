@@ -192,12 +192,11 @@ class Container:
 if __name__ == '__main__':
     exp = 'fc'
     dataset_name = 'vidor_hoid_mini'
-
-    data_root = '../data/%s' % dataset_name
+    dataset_root = '../data/%s' % dataset_name
     cfg_path = 'cfgs/%s_%s.yaml' % (dataset_name, exp)
     with open(cfg_path) as f:
         cfg = yaml.load(f)
-    dataset = VidOR(data_root, 'train')
+    dataset = VidOR(dataset_name, dataset_root, 'train', '../cache')
     model = FCNet(dataset.category_num('predicate'))
     container = Container(cfg, model, dataset)
     container.train()
