@@ -8,8 +8,8 @@ class FCNet(nn.Module):
                  sbj_feat_len=2048,
                  obj_feat_len=2048,
                  body_feat_lan=2048 * 6,
-                 lan_feat_len=300,
-                 spa_feat_lan=9 * 3):
+                 lan_feat_len=600,
+                 spa_feat_lan=14 * 3):
 
         super(FCNet, self).__init__()
 

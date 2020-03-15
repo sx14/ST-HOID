@@ -15,7 +15,7 @@ class Container:
     def __init__(self, cfg, model, dataset):
         # hyper-params
         self.num_epoch = cfg['train_epoch']
-        self.batch_size = cfg['batch_size']
+        self.batch_size = cfg['train_batch_size']
         self.lr_init = cfg['train_lr']
         self.lr_adjust_rate = cfg['train_lr_adjust_rate']
         self.lr_adjust_freq = cfg['train_lr_adjust_freq']

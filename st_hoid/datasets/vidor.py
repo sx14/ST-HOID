@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+from random import shuffle
 import scipy.io as sio
 from copy import deepcopy
 from math import log, e
@@ -140,9 +141,9 @@ class VidOR(Dataset):
         pkg_id = inst['pkg_id']
         vid_id = inst['vid_id']
 
-        tid2traj_feat = {}
         if pkg_id != self.curr_pkg_id or vid_id != self.curr_vid_id:
             feat_dir = os.path.join(self.feat_root, pkg_id, vid_id)
+            tid2traj_feat = {}
             for traj_feat_file in os.listdir(feat_dir):
                 tid = traj_feat_file.split('.')[0]
                 traj_feat_file_path = os.path.join(feat_dir, traj_feat_file)
@@ -312,6 +313,7 @@ class VidOR(Dataset):
                 neg_insts = self._gen_negative_instances(vid_anno['relation_instances'],
                                                          tid2dur, tid2cate_idx, pkg_id, vid_id)
                 vid_insts = pos_insts + neg_insts[:3 * len(pos_insts)]
+                shuffle(vid_insts)
                 self.all_vid_info[vid_id] = vid_info
                 self.all_trajs[vid_id] = tid2traj
                 self.all_traj_cates[vid_id] = tid2cate_idx
