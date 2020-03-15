@@ -126,10 +126,10 @@ class VidOR(Dataset):
         sbj_tid = inst['sbj_tid']
 
         sbj_stt_box = self.all_trajs[vid_id][sbj_tid][stt_fid]
-        sbj_end_box = self.all_trajs[vid_id][sbj_tid][end_fid]
+        sbj_end_box = self.all_trajs[vid_id][sbj_tid][end_fid-1]
 
         obj_stt_box = self.all_trajs[vid_id][obj_tid][stt_fid]
-        obj_end_box = self.all_trajs[vid_id][obj_tid][end_fid]
+        obj_end_box = self.all_trajs[vid_id][obj_tid][end_fid-1]
 
         width = self.all_vid_info[vid_id]['width']
         height = self.all_vid_info[vid_id]['height']
@@ -291,13 +291,15 @@ class VidOR(Dataset):
             self.all_inst_count = data_cache['all_inst_count']
             return
 
+        print('processing annotations ...')
         self.all_vid_info = {}
         self.all_trajs = {}
         self.all_traj_cates = {}
         self.all_insts = []
         self.all_inst_count = []
 
-        for pkg_id in sorted(os.listdir(self.anno_root)):
+        from tqdm import tqdm
+        for pkg_id in tqdm(sorted(os.listdir(self.anno_root))):
             pkg_root = os.path.join(self.anno_root, pkg_id)
             for vid_anno_file in sorted(os.listdir(pkg_root)):
                 vid_id = vid_anno_file.split('.')[0]
@@ -322,7 +324,10 @@ class VidOR(Dataset):
                 self.all_insts += vid_insts
                 self.all_inst_count.append(len(vid_insts))
 
-        with open(cache_path) as f:
+        if not os.path.exists(self.cache_root):
+            os.makedirs(self.cache_root)
+
+        with open(cache_path, 'w') as f:
             pickle.dump({'all_trajs': self.all_trajs,
                          'all_insts': self.all_insts,
                          'all_vid_info': self.all_vid_info,

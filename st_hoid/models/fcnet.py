@@ -66,7 +66,7 @@ class FCNet(nn.Module):
             score = sbj_score + obj_socre + lan_score + spa_score + body_score
         else:
             score = sbj_score + obj_socre + lan_score + spa_score
-        return softmax(score), score
+        return softmax(score, dim=1), score
 
     def name(self):
         return self.name
