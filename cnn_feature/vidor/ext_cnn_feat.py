@@ -50,10 +50,10 @@ def parse_args():
     Parse input arguments
     """
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
-    parser.add_argument('--datasets', dest='datasets',
-                        help='training datasets',
+    parser.add_argument('--dataset', dest='dataset',
+                        help='training dataset',
                         default='coco', type=str)
-    parser.add_argument('--cfgs', dest='cfg_file',
+    parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='cfgs/res101.yml', type=str)
     parser.add_argument('--net', dest='net',
@@ -81,10 +81,10 @@ def parse_args():
                         help='whether perform class_agnostic bbox regression',
                         action='store_true')
     parser.add_argument('--parallel_type', dest='parallel_type',
-                        help='which part of models to parallel, 0: all, 1: models before roi pooling',
+                        help='which part of model to parallel, 0: all, 1: model before roi pooling',
                         default=0, type=int)
     parser.add_argument('--checksession', dest='checksession',
-                        help='checksession to load models',
+                        help='checksession to load model',
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
@@ -187,11 +187,11 @@ if __name__ == '__main__':
         checkpoint = torch.load(load_name)
     else:
         checkpoint = torch.load(load_name, map_location=(lambda storage, loc: storage))
-    fasterRCNN.load_state_dict(checkpoint['models'])
+    fasterRCNN.load_state_dict(checkpoint['model'])
     if 'pooling_mode' in checkpoint.keys():
         cfg.POOLING_MODE = checkpoint['pooling_mode']
 
-    print('load models successfully!')
+    print('load model successfully!')
 
     # initilize the tensor holder here.
     im_data = torch.FloatTensor(1)
@@ -361,7 +361,8 @@ if __name__ == '__main__':
             for tid in tid2feat:
                 output_path = os.path.join(output_dir, str(tid)+'.bin')
                 with open(output_path, 'wb') as f:
-                    feat = tid2feat[tid].mean(4).mean(3).astype('float32')
+                    feat = tid2feat[tid].mean(4).mean(3)
+                    # print(feat.shape)
                     pickle.dump(feat, f)
 
 

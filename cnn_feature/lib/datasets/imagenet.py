@@ -88,7 +88,7 @@ class imagenet(imdb):
 
     def _load_image_set_index(self):
         """
-        Load the indexes listed in this datasets's image set file.
+        Load the indexes listed in this dataset's image set file.
         """
         # Example path to image set file:
         # self._data_path + /ImageSets/val.txt

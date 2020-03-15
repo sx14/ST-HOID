@@ -61,7 +61,7 @@ class _fasterRCNN(nn.Module):
         gt_boxes = gt_boxes.data
         num_boxes = num_boxes.data
 
-        # feed image data to base models to obtain base feature map
+        # feed image data to base model to obtain base feature map
         base_feat = self.RCNN_base(im_data)
 
         # feed base feature map to RPN to obtain rois
@@ -100,7 +100,7 @@ class _fasterRCNN(nn.Module):
         elif cfg.POOLING_MODE == 'pool':
             pooled_feat = self.RCNN_roi_pool(base_feat, rois.view(-1,5))
 
-        # feed pooled features to top models
+        # feed pooled features to top model
         pooled_feat = self._head_to_tail(pooled_feat)
 
         # compute bbox offset

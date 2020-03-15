@@ -164,9 +164,9 @@ class ResNet(nn.Module):
 
 
 def resnet18(pretrained=False):
-  """Constructs a ResNet-18 models.
+  """Constructs a ResNet-18 model.
   Args:
-    pretrained (bool): If True, returns a models pre-trained on ImageNet
+    pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
   model = ResNet(BasicBlock, [2, 2, 2, 2])
   if pretrained:
@@ -175,9 +175,9 @@ def resnet18(pretrained=False):
 
 
 def resnet34(pretrained=False):
-  """Constructs a ResNet-34 models.
+  """Constructs a ResNet-34 model.
   Args:
-    pretrained (bool): If True, returns a models pre-trained on ImageNet
+    pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
   model = ResNet(BasicBlock, [3, 4, 6, 3])
   if pretrained:
@@ -186,9 +186,9 @@ def resnet34(pretrained=False):
 
 
 def resnet50(pretrained=False):
-  """Constructs a ResNet-50 models.
+  """Constructs a ResNet-50 model.
   Args:
-    pretrained (bool): If True, returns a models pre-trained on ImageNet
+    pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
   model = ResNet(Bottleneck, [3, 4, 6, 3])
   if pretrained:
@@ -197,9 +197,9 @@ def resnet50(pretrained=False):
 
 
 def resnet101(pretrained=False):
-  """Constructs a ResNet-101 models.
+  """Constructs a ResNet-101 model.
   Args:
-    pretrained (bool): If True, returns a models pre-trained on ImageNet
+    pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
   model = ResNet(Bottleneck, [3, 4, 23, 3])
   if pretrained:
@@ -208,9 +208,9 @@ def resnet101(pretrained=False):
 
 
 def resnet152(pretrained=False):
-  """Constructs a ResNet-152 models.
+  """Constructs a ResNet-152 model.
   Args:
-    pretrained (bool): If True, returns a models pre-trained on ImageNet
+    pretrained (bool): If True, returns a model pre-trained on ImageNet
   """
   model = ResNet(Bottleneck, [3, 8, 36, 3])
   if pretrained:
@@ -233,7 +233,7 @@ class resnet(_fasterRCNN):
     if self.num_layers == 18:
         resnet = resnet18()
     if self.num_layers == 34:
-        resnet = resnet34()     
+        resnet = resnet34()
     if self.num_layers == 50:
         resnet = resnet50()
     if self.num_layers == 152:
