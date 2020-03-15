@@ -1,13 +1,15 @@
 import os
-
+import shutil
 import yaml
 import numpy as np
 import torch
 from torch.nn.functional import cross_entropy
 from torch.autograd import Variable
 
+
 from datasets.vidor import VidOR
 from models.fcnet import FCNet
+
 
 
 class Container:
@@ -26,6 +28,7 @@ class Container:
         self.eval = cfg['eval']
         self.weight_root = os.path.join(cfg['weight_root'], cfg['dataset'], cfg['exp'])
         self.weight_path = os.path.join(self.weight_root, model.name+'_%d.pkl')
+        self.log_root = cfg['log_root']
 
         # init dataset
         self.dataset = dataset
@@ -133,8 +136,12 @@ class Container:
         return acc
 
     def train(self):
-        curr_epoch = 0
+        from tensorboardX import SummaryWriter
+        if os.path.exists(self.log_root):
+            shutil.rmtree(self.log_root)
+        logger = SummaryWriter(self.log_root)
 
+        curr_epoch = 0
         if self.is_resume:
             curr_epoch = self.resume()
 
@@ -181,11 +188,14 @@ class Container:
                     loss = loss.cpu()
                 loss = loss.data.item()
                 acc = self.cal_acc(probs.data.numpy(), pre_label.numpy())
+                logger.add_scalars('train', {'loss': loss}, curr_epoch * itr_num + itr)
+                logger.add_scalars('train', {'acc': acc}, curr_epoch * itr_num + itr)
                 if itr % self.print_freq == 0:
                     print('[epoch %d][%d/%d] loss: %.4f acc: %.4f' % (curr_epoch, itr, itr_num, loss, acc))
 
             if self.eval:
                 eval_acc = self.evaluation()
+                logger.add_scalars('train', {'eval_acc': eval_acc}, curr_epoch * itr_num + itr_num)
             self.save_weights(curr_epoch)
             self.adjust_lr(curr_epoch)
             curr_epoch += 1
