@@ -14,17 +14,17 @@ class Container:
     def __init__(self, cfg, model, dataset):
 
         # hyper-params
-        self.num_epoch = cfg.train_epoch
-        self.batch_size = cfg.batch_size
-        self.lr_init = cfg.train_lr
-        self.lr_adjust_rate = cfg.train_lr_adjust_rate
-        self.lr_adjust_freq = cfg.train_lr_adjust_freq
-        self.train_momentum = cfg.train_momentum
-        self.train_weight_decay = cfg.train_weight_decay
-        self.save_freq = cfg.train_save_freq
-        self.print_freq = cfg.train_print_freq
-        self.eval = cfg.eval
-        self.weight_root = os.path.join(cfg.weight_root, cfg.dataset, cfg.exp)
+        self.num_epoch = cfg['train_epoch']
+        self.batch_size = cfg['batch_size']
+        self.lr_init = cfg['train_lr']
+        self.lr_adjust_rate = cfg['train_lr_adjust_rate']
+        self.lr_adjust_freq = cfg['train_lr_adjust_freq']
+        self.train_momentum = cfg['train_momentum']
+        self.train_weight_decay = cfg['train_weight_decay']
+        self.save_freq = cfg['train_save_freq']
+        self.print_freq = cfg['train_print_freq']
+        self.eval = cfg['eval']
+        self.weight_root = os.path.join(cfg['weight_root'], cfg['dataset'], cfg['exp'])
         self.weight_path = os.path.join(self.weight_root, model.name+'_%d.pkl')
 
         # init dataset
@@ -43,11 +43,11 @@ class Container:
                                          weight_decay=self.train_weight_decay,
                                          nesterov=True)
         # resume params
-        self.resume = cfg.train_resume
-        self.resume_epoch = cfg.train_resume_epoch
+        self.resume = cfg['train_resume']
+        self.resume_epoch = cfg['train_resume_epoch']
 
         # gpu switch
-        self.use_gpu = cfg.use_gpu
+        self.use_gpu = cfg['use_gpu']
 
     @staticmethod
     def cal_acc(probs, labels):

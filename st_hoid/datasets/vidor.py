@@ -276,7 +276,7 @@ class VidOR(Dataset):
 
         cache_path = 'data_cache.bin'
         if os.path.exists(cache_path):
-            print('%s found! loading ...')
+            print('%s found! loading ...' % cache_path)
             with open(cache_path) as f:
                 data_cache = pickle.load(f)
 
