@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import scipy.io as sio
 from copy import deepcopy
 from math import log, e
 
@@ -29,7 +30,7 @@ class VidOR(Dataset):
         self.pre_cates = None
         self.obj_cate2idx = None
         self.pre_cate2idx = None
-        self.sbj_cates = {'human', 'adult', 'child'}
+        self.sbj_cates = {'baby', 'adult', 'child'}
         self._load_category_sets()
 
         self.SEG_LEN = 10
@@ -63,7 +64,6 @@ class VidOR(Dataset):
             return cate in self.sbj_cates
         else:
             return self.obj_cates[cate] in self.sbj_cates
-
 
     def split_self(self):
         self2 = deepcopy(self)
@@ -164,8 +164,7 @@ class VidOR(Dataset):
 
     def _load_object_vectors(self):
         objvec_path = os.path.join(self.dataset_root, 'object_vectors.mat')
-        with open(objvec_path) as f:
-            self.objvecs = pickle.load(f)
+        self.objvecs = sio.loadmat(objvec_path)
 
     def _load_category_sets(self):
         obj_cate_path = os.path.join(self.dataset_root, 'object_labels.txt')
@@ -196,10 +195,10 @@ class VidOR(Dataset):
                 if tid not in tid2traj:
                     tid2traj[tid] = [[-1] * 4] * vid_len
                 if tid not in tid2dur:
-                    tid2dur[tid] = [frm_idx, vid_len]
+                    tid2dur[tid] = [frm_idx, frm_idx+1]
 
                 tid2traj[tid][frm_idx] = box
-                tid2dur[tid][1] = min(tid2dur[tid][1], frm_idx + 1)
+                tid2dur[tid][1] = frm_idx + 1
 
         for tid in tid2traj:
             tid2traj[tid] = np.array(tid2traj[tid]).astype(np.int)
@@ -211,7 +210,7 @@ class VidOR(Dataset):
         for org_inst in org_insts:
             sbj_tid = org_inst['subject_tid']
             obj_tid = org_inst['object_tid']
-            stt_frm_idx = org_inst['start_fid']
+            stt_frm_idx = org_inst['begin_fid']
             end_frm_idx = org_inst['end_fid']
             pre_cate = org_inst['predicate']
 
@@ -251,7 +250,7 @@ class VidOR(Dataset):
         for pos_inst in pos_insts:
             sbj_tid = pos_inst['subject_tid']
             obj_tid = pos_inst['object_tid']
-            stt_frm_idx = pos_inst['start_fid']
+            stt_frm_idx = pos_inst['begin_fid']
             end_frm_idx = pos_inst['end_fid']
             cands['%d-%d' % (sbj_tid, obj_tid)][stt_frm_idx: end_frm_idx] = 0
 
@@ -262,9 +261,9 @@ class VidOR(Dataset):
             sbj_tid = int(sid)
             obj_tid = int(oid)
             for frm_idx in range(0, cand_dur.shape[0] % self.SEG_LEN, self.SEG_LEN):
-                if cand_dur[frm_idx: frm_idx+self.SEG_LEN] == self.SEG_LEN:
+                if cand_dur[frm_idx: frm_idx+self.SEG_LEN].sum() == self.SEG_LEN:
                     neg_insts.append({
-                        'pkg_id': pos_inst,
+                        'pkg_id': pkg_id,
                         'vid_id': vid_id,
                         'stt_fid': frm_idx,
                         'end_fid': frm_idx + self.SEG_LEN,

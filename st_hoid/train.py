@@ -194,7 +194,7 @@ if __name__ == '__main__':
     dataset_name = 'vidor_hoid_mini'
 
     data_root = '../data/%s' % dataset_name
-    cfg_path = 'cfg/%s_%s.yaml' % (dataset_name, exp)
+    cfg_path = 'cfgs/%s_%s.yaml' % (dataset_name, exp)
     with open(cfg_path) as f:
         cfg = yaml.load(f)
     dataset = VidOR(data_root, 'train')
