@@ -205,7 +205,7 @@ class VidOR(Dataset):
             tid2traj[tid] = np.array(tid2traj[tid]).astype(np.int)
         return tid2traj, tid2dur
 
-    def _load_instances(self, org_insts, pkg_id, vid_id):
+    def _gen_positive_instances(self, org_insts, pkg_id, vid_id):
         insts = []
         seg_len = self.SEG_LEN
         for org_inst in org_insts:
@@ -215,7 +215,8 @@ class VidOR(Dataset):
             end_frm_idx = org_inst['end_fid']
             pre_cate = org_inst['predicate']
 
-            for frm_idx in range(stt_frm_idx % seg_len, end_frm_idx % seg_len, seg_len):
+            for frm_idx in range(int(stt_frm_idx / seg_len) * seg_len,
+                                 int(end_frm_idx / seg_len) * seg_len, seg_len):
                 seg_stt_frm_idx = frm_idx
                 seg_end_frm_idx = frm_idx + seg_len
                 insts.append({
@@ -261,7 +262,7 @@ class VidOR(Dataset):
             sid, oid = sid_oid.split('-')
             sbj_tid = int(sid)
             obj_tid = int(oid)
-            for frm_idx in range(0, cand_dur.shape[0] % self.SEG_LEN, self.SEG_LEN):
+            for frm_idx in range(0, int(cand_dur.shape[0] / self.SEG_LEN) * self.SEG_LEN, self.SEG_LEN):
                 if cand_dur[frm_idx: frm_idx+self.SEG_LEN].sum() == self.SEG_LEN:
                     neg_insts.append({
                         'pkg_id': pkg_id,
@@ -307,7 +308,7 @@ class VidOR(Dataset):
                             'vid_id': vid_id,
                             'pkg_id': pkg_id}
                 tid2traj, tid2dur = self._load_trajectories(vid_anno['trajectories'], vid_info)
-                pos_insts = self._load_instances(vid_anno['relation_instances'], pkg_id, vid_id)
+                pos_insts = self._gen_positive_instances(vid_anno['relation_instances'], pkg_id, vid_id)
                 tid2cate_idx = {traj_info['tid']: self.obj_cate2idx[traj_info['category']]
                                 for traj_info in vid_anno['subject/objects']}
                 neg_insts = self._gen_negative_instances(vid_anno['relation_instances'],

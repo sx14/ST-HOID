@@ -272,7 +272,7 @@ if __name__ == '__main__':
                                                            pool_feat_size,
                                                            pool_feat_size))
                 else:
-                    tid2feat[traj_info['tid']] = np.zeros((num_frames, 1,
+                    tid2feat[traj_info['tid']] = np.zeros((num_segs, 1,
                                                            pool_feat_chnl,
                                                            pool_feat_size,
                                                            pool_feat_size))
