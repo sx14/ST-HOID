@@ -43,7 +43,7 @@ class Container:
                                          weight_decay=self.train_weight_decay,
                                          nesterov=True)
         # resume params
-        self.resume = cfg['train_resume']
+        self.is_resume = cfg['train_resume']
         self.resume_epoch = cfg['train_resume_epoch']
 
         # gpu switch
@@ -72,6 +72,7 @@ class Container:
                                          momentum=self.train_momentum,
                                          weight_decay=self.train_weight_decay,
                                          nesterov=True)
+        print('learning rate is adjusted to: %f' % lr_curr)
 
     def resume(self):
         # load weights
@@ -82,7 +83,7 @@ class Container:
             resume_dict[name] = param
         self.model.load_state_dict(resume_dict)
         curr_epoch = self.resume_epoch
-
+        print('checkpoint is loaded from %s' % self.weight_path % self.resume_epoch)
         # adjust lr
         self.adjust_lr(self.resume_epoch)
         return curr_epoch
@@ -127,13 +128,14 @@ class Container:
             acc = self.cal_acc(probs.data.numpy(), pre_label.numpy())
             acc_sum += acc
 
-            acc = acc_sum / len(data_loader_val)
-            print('eval acc: %.4f' % acc)
+        acc = acc_sum / len(data_loader_val)
+        print('eval acc: %.4f' % acc)
+        return acc
 
     def train(self):
         curr_epoch = 0
 
-        if self.resume:
+        if self.is_resume:
             curr_epoch = self.resume()
 
         sbj_feat_v = Variable(torch.FloatTensor(1))
@@ -183,7 +185,7 @@ class Container:
                     print('[epoch %d][%d/%d] loss: %.4f acc: %.4f' % (curr_epoch, itr, itr_num, loss, acc))
 
             if self.eval:
-                self.evaluation()
+                eval_acc = self.evaluation()
             self.save_weights(curr_epoch)
             self.adjust_lr(curr_epoch)
             curr_epoch += 1

@@ -15,7 +15,7 @@ train_lr_adjust_rate: 0.1
 train_lr_adjust_freq: 1
 train_save_freq: 1
 train_print_freq: 20
-train_batch_size: 4
+train_batch_size: 16
 eval: True
 
 weight_root: weights
