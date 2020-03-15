@@ -9,10 +9,10 @@ from torch.autograd import Variable
 from datasets.vidor import VidOR
 from models.fcnet import FCNet
 
+
 class Container:
 
     def __init__(self, cfg, model, dataset):
-
         # hyper-params
         self.num_epoch = cfg['train_epoch']
         self.batch_size = cfg['batch_size']
@@ -108,7 +108,7 @@ class Container:
         acc_sum = 0.0
         self.model.eval()
         print('evaluating ...')
-        data_loader_val = torch.utils.data.DataLoaer(self.dataset_val, batch_size=self.batch_size)
+        data_loader_val = torch.utils.data.DataLoader(self.dataset_val, batch_size=self.batch_size)
         for itr, data in enumerate(data_loader_val):
 
             sbj_feat, obj_feat, body_feat, \
@@ -152,7 +152,7 @@ class Container:
             body_feat_v = body_feat_v.cuda()
             pre_label_v = pre_label_v.cuda()
 
-        data_loader_train = torch.utils.data.DataLoaer(self.dataset)
+        data_loader_train = torch.utils.data.DataLoader(self.dataset, batch_size=self.batch_size)
 
         while curr_epoch < self.num_epoch:
             self.model.train()

@@ -15,12 +15,12 @@ class VidOR(Dataset):
         self.val_ratio = 0.1
         self.dataset_root = dataset_root
         if split == 'train':
+            self.feat_root = os.path.join(dataset_root, 'feat', 'train')
             self.data_root = os.path.join(dataset_root, 'Data', 'VID', 'train')
-            self.feat_root = os.path.join(dataset_root, 'feat', 'VID', 'train')
             self.anno_root = os.path.join(dataset_root, 'anno_with_pose', 'training')
         elif split == 'val':
+            self.feat_root = os.path.join(dataset_root, 'feat', 'val')
             self.data_root = os.path.join(dataset_root, 'Data', 'VID', 'val')
-            self.feat_root = os.path.join(dataset_root, 'feat', 'VID', 'val')
             self.anno_root = os.path.join(dataset_root, 'anno_with_pose', 'validation')
         else:
             print('split = "train" or "val"')
@@ -157,14 +157,14 @@ class VidOR(Dataset):
         obj_tid = inst['obj_tid']
         stt_fid = inst['stt_fid']
         seg_idx = int(stt_fid / self.SEG_LEN)
-        obj_feat = self.traj_feats[obj_tid][seg_idx]
-        sbj_feat = self.traj_feats[sbj_tid][seg_idx][0]
-        body_feat = self.traj_feats[sbj_tid][seg_idx][1:].reshape(-1)
+        obj_feat = self.traj_feats[str(obj_tid)][seg_idx][0]
+        sbj_feat = self.traj_feats[str(sbj_tid)][seg_idx][0]
+        body_feat = self.traj_feats[str(sbj_tid)][seg_idx][1:].reshape(-1)
         return sbj_feat, obj_feat, body_feat
 
     def _load_object_vectors(self):
         objvec_path = os.path.join(self.dataset_root, 'object_vectors.mat')
-        self.objvecs = sio.loadmat(objvec_path)
+        self.objvecs = sio.loadmat(objvec_path)['object_vectors']
 
     def _load_category_sets(self):
         obj_cate_path = os.path.join(self.dataset_root, 'object_labels.txt')

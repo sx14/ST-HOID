@@ -55,13 +55,17 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(body_feat_lan, cate_num))
 
-    def forward(self, sbj_feat, obj_feat, lan_feat, spa_feat):
+    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat):
         sbj_score = self.sbj_branch.forward(sbj_feat)
         obj_socre = self.obj_branch.forward(obj_feat)
-        lan_score = self.lan_branch.forward(lan_feat)
         spa_score = self.spa_branch.forward(spa_feat)
+        lan_score = self.lan_branch.forward(lan_feat)
 
-        score = sbj_score + obj_socre + lan_score + spa_score
+        if body_feat.sum() != 0:
+            body_score = self.body_branch.forward(body_feat)
+            score = sbj_score + obj_socre + lan_score + spa_score + body_score
+        else:
+            score = sbj_score + obj_socre + lan_score + spa_score
         return softmax(score), score
 
     def name(self):
