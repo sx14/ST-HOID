@@ -6,17 +6,17 @@ dataset: vidor_hoid_mini
 
 # training
 use_gpu: True
-train_epoch: 4
-train_lr: 0.001
+train_epoch: 20
+train_lr: 0.0001
 train_momentum: 0.9
 train_weight_decay: 0.0001
 train_resume: False
 train_resume_epoch: 0
-train_lr_adjust_rate: 0.1
-train_lr_adjust_freq: 1
-train_save_freq: 1
-train_print_freq: 20
-train_batch_size: 16
+train_lr_adjust_rate: 0.3
+train_lr_adjust_freq: 5
+train_save_freq: 5
+train_print_freq: 10
+train_batch_size: 32
 eval: True
 
 

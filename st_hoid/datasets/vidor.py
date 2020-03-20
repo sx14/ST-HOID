@@ -13,7 +13,7 @@ from torch.utils.data import Dataset
 class VidOR(Dataset):
     def __init__(self, ds_name, ds_root, split, cache_root):
 
-        self.val_ratio = 0.1
+        self.val_ratio = 0.01
         self.dataset_name = ds_name
         self.dataset_root = ds_root
         self.cache_root = cache_root

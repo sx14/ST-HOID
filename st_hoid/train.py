@@ -55,11 +55,35 @@ class Container:
     @staticmethod
     def cal_acc(probs, labels):
         pre_labels = np.argmax(probs, axis=1)
+        # print('-' * 48)
+        # print(labels)
+        # print(pre_labels)
+
         diff = labels - pre_labels
         diff[diff != 0] = 1
         fcnt = diff.sum()
         tcnt = diff.shape[0] - fcnt
-        return tcnt * 1.0 / diff.shape[0]
+        acc = tcnt * 1.0 / diff.shape[0]
+
+        pos_label_flags = labels > 0
+        pos_cnt = diff[pos_label_flags].shape[0]
+        pos_fcnt = diff[pos_label_flags].sum()
+        pos_tcnt = pos_cnt - pos_fcnt
+        if pos_cnt > 0:
+            pos_acc = pos_tcnt * 1.0 / pos_cnt
+        else:
+            pos_acc = 0.0
+
+        neg_label_flags = labels == 0
+        neg_cnt = diff[neg_label_flags].shape[0]
+        neg_fcnt = diff[neg_label_flags].sum()
+        neg_tcnt = neg_cnt - neg_fcnt
+        if neg_tcnt > 0:
+            neg_acc = neg_tcnt * 1.0 / neg_cnt
+        else:
+            neg_acc = 0.0
+
+        return acc, pos_acc, neg_acc
 
     def save_weights(self, curr_finished_epoch):
         if not os.path.exists(self.weight_root):
@@ -128,7 +152,7 @@ class Container:
 
             if self.use_gpu:
                 probs = probs.cpu()
-            acc = self.cal_acc(probs.data.numpy(), pre_label.numpy())
+            acc, _, _ = self.cal_acc(probs.data.numpy(), pre_label.numpy())
             acc_sum += acc
 
         acc = acc_sum / len(data_loader_val)
@@ -179,7 +203,7 @@ class Container:
                 pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
                 probs, scores = self.model.forward(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
-                loss = self.loss_func(scores, pre_label_v)
+                loss = self.loss_func(scores, pre_label_v, size_average=False)
                 loss.backward()
                 self.optimizer.step()
 
@@ -187,15 +211,18 @@ class Container:
                     probs = probs.cpu()
                     loss = loss.cpu()
                 loss = loss.data.item()
-                acc = self.cal_acc(probs.data.numpy(), pre_label.numpy())
-                logger.add_scalars('train', {'loss': loss}, curr_epoch * itr_num + itr)
-                logger.add_scalars('train', {'acc': acc}, curr_epoch * itr_num + itr)
+                acc, pos_acc, neg_acc = self.cal_acc(probs.data.numpy(), pre_label.numpy())
+                logger.add_scalars('loss', {'loss': loss}, curr_epoch * itr_num + itr)
+                logger.add_scalars('train_acc', {'acc': acc,
+                                                 'pos_acc': pos_acc,
+                                                 'neg_acc': neg_acc}, curr_epoch * itr_num + itr)
                 if itr % self.print_freq == 0:
-                    print('[epoch %d][%d/%d] loss: %.4f acc: %.4f' % (curr_epoch, itr, itr_num, loss, acc))
+                    print('[epoch %d][%d/%d] loss: %.4f acc: %.4f pos_acc: %.4f neg_acc %.4f' %
+                          (curr_epoch, itr, itr_num, loss, acc, pos_acc, neg_acc))
 
             if self.eval:
                 eval_acc = self.evaluation()
-                logger.add_scalars('train', {'eval_acc': eval_acc}, curr_epoch * itr_num + itr_num)
+                logger.add_scalars('val_acc', {'eval_acc': eval_acc}, curr_epoch * itr_num + itr_num)
             self.save_weights(curr_epoch)
             self.adjust_lr(curr_epoch)
             curr_epoch += 1
