@@ -5,6 +5,7 @@ exp: fc
 dataset: vidor_hoid_mini
 
 # training
+use_gpu: True
 train_epoch: 4
 train_lr: 0.001
 train_momentum: 0.9
@@ -18,9 +19,11 @@ train_print_freq: 20
 train_batch_size: 16
 eval: True
 
+
+# paths
 weight_root: weights
 log_root: logs
-use_gpu: True
+
 
 
 

@@ -221,7 +221,7 @@ if __name__ == '__main__':
     fasterRCNN.eval()
 
     image_root = os.path.join(args.data_root, 'Data', 'VID', args.split)
-    feat_root = os.path.join(args.data_root, 'feat', args.split)
+    feat_root = os.path.join(args.data_root, 'feat_gt', args.split)
     if args.split == 'val':
         split = 'validation'
     elif args.split == 'train':
