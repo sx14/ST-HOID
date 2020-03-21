@@ -69,7 +69,7 @@ def parse_args():
                         help='directory to load images for demo',
                         default="../data/vidor_hoid_mini")
     parser.add_argument('--split', dest='split',
-                        default="train")
+                        default="val")
     parser.add_argument('--cuda', dest='cuda',
                         default=True,
                         help='whether use CUDA',
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     body_part_num = 6
     seg_len = 10
 
-    det_path = os.path.join(args.data_root, 'object_trajectories_%s_det.json' % args.split)
+    det_path = os.path.join(args.data_root, 'object_trajectories_%s_det_with_pose.json' % args.split)
     with open(det_path) as f:
         all_trajs = json.load(f)['results']
 
@@ -287,7 +287,7 @@ if __name__ == '__main__':
         num_segs = int(math.ceil(num_frames * 1.0 / seg_len))
 
         height = vid_frm.shape[0]
-        width = vid_frm.shapep[1]
+        width = vid_frm.shape[1]
 
         tid2feat = {}
         tid2cate = {}
@@ -302,7 +302,8 @@ if __name__ == '__main__':
                                           pool_feat_size,
                                           pool_feat_size))
             else:
-                tid2feat[tid] = np.zeros((num_segs, 1,
+                tid2feat[tid] = np.zeros((num_segs,
+                                          1,
                                           pool_feat_chnl,
                                           pool_feat_size,
                                           pool_feat_size))
@@ -387,9 +388,8 @@ if __name__ == '__main__':
                 entity_feat = np.maximum(entity_feat, entity_feat0)
                 tid2feat[tids[ii]][seg_idx] = entity_feat
 
-            for tid in tid2feat:
-                output_path = os.path.join(output_dir, str(tid) + '.bin')
-                with open(output_path, 'wb') as f:
-                    feat = tid2feat[tid].mean(4).mean(3)
-                    # print(feat.shape)
-                    pickle.dump(feat, f)
+        for tid in tid2feat:
+            output_path = os.path.join(output_dir, str(tid) + '.bin')
+            with open(output_path, 'wb') as f:
+                feat = tid2feat[tid].mean(4).mean(3).astype('float32')
+                pickle.dump(feat, f)

@@ -1,8 +1,18 @@
+import torch
 from torch import nn
 from torch.nn.functional import softmax
 
 
 class FCNet(nn.Module):
+
+    def load_weight(self, weight_path):
+        # load weights
+        weight_dict = torch.load(weight_path)
+        resume_values = weight_dict.values()
+        resume_dict = self.state_dict()
+        for name, param in zip(list(resume_dict.keys()), list(resume_values)):
+            resume_dict[name] = param
+        self.load_state_dict(resume_dict)
 
     def __init__(self, cate_num,
                  sbj_feat_len=2048,

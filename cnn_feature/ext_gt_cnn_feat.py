@@ -361,7 +361,7 @@ if __name__ == '__main__':
             for tid in tid2feat:
                 output_path = os.path.join(output_dir, str(tid)+'.bin')
                 with open(output_path, 'wb') as f:
-                    feat = tid2feat[tid].mean(4).mean(3)
+                    feat = tid2feat[tid].mean(4).mean(3).astype('float32')
                     # print(feat.shape)
                     pickle.dump(feat, f)
 

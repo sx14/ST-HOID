@@ -3,9 +3,10 @@
 # meta
 exp: fc
 dataset: vidor_hoid_mini
+use_gpu: True
+seg_len: 10
 
 # training
-use_gpu: True
 train_epoch: 20
 train_lr: 0.0001
 train_momentum: 0.9
@@ -19,6 +20,12 @@ train_print_freq: 10
 train_batch_size: 32
 eval: True
 
+# test
+test_split: val
+test_epoch: 20
+test_traj_det: object_trajectories_val_det_with_pose.json
+test_output_root: results
+test_max_per_video: 2000
 
 # paths
 weight_root: weights

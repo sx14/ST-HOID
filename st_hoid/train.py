@@ -11,7 +11,6 @@ from datasets.vidor import VidOR
 from models.fcnet import FCNet
 
 
-
 class Container:
 
     def __init__(self, cfg, model, dataset):
@@ -88,12 +87,12 @@ class Container:
     def save_weights(self, curr_finished_epoch):
         if not os.path.exists(self.weight_root):
             os.makedirs(self.weight_root)
-        if (curr_finished_epoch + 1) % self.save_freq == 0:
+        if curr_finished_epoch % self.save_freq == 0:
             torch.save(self.model.state_dict(), self.weight_path % curr_finished_epoch)
 
     def adjust_lr(self, curr_finished_epoch):
         # adjust learning rate AFTER each epoch
-        lr_curr = self.lr_init * (self.lr_adjust_rate ** int((curr_finished_epoch + 1) / self.lr_adjust_freq))
+        lr_curr = self.lr_init * (self.lr_adjust_rate ** int(curr_finished_epoch / self.lr_adjust_freq))
         self.optimizer = torch.optim.SGD([{'params': self.model.parameters()}],
                                          lr=lr_curr,
                                          momentum=self.train_momentum,
@@ -223,9 +222,9 @@ class Container:
             if self.eval:
                 eval_acc = self.evaluation()
                 logger.add_scalars('val_acc', {'eval_acc': eval_acc}, curr_epoch * itr_num + itr_num)
+            curr_epoch += 1
             self.save_weights(curr_epoch)
             self.adjust_lr(curr_epoch)
-            curr_epoch += 1
 
 
 if __name__ == '__main__':

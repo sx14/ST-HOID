@@ -17,12 +17,13 @@ class VidOR(Dataset):
         self.dataset_name = ds_name
         self.dataset_root = ds_root
         self.cache_root = cache_root
+
         if split == 'train':
-            self.feat_root = os.path.join(ds_root, 'feat', 'train')
+            self.feat_root = os.path.join(ds_root, 'feat_gt', 'train')
             self.data_root = os.path.join(ds_root, 'Data', 'VID', 'train')
             self.anno_root = os.path.join(ds_root, 'anno_with_pose', 'training')
         elif split == 'val':
-            self.feat_root = os.path.join(ds_root, 'feat', 'val')
+            self.feat_root = os.path.join(ds_root, 'feat_gt', 'val')
             self.data_root = os.path.join(ds_root, 'Data', 'VID', 'val')
             self.anno_root = os.path.join(ds_root, 'anno_with_pose', 'validation')
         else:
@@ -43,9 +44,7 @@ class VidOR(Dataset):
         self.all_traj_cates = None
         self.all_inst_count = None
         self._load_annotations()
-
-        self.objvecs = None
-        self._load_object_vectors()
+        self.obj_vecs = self._load_object_vectors(ds_root)
 
         self.curr_pkg_id = -1
         self.curr_vid_id = -1
@@ -95,9 +94,9 @@ class VidOR(Dataset):
         sbj_tid = inst['sbj_tid']
         obj_cate_idx = self.all_traj_cates[vid_id][obj_tid]
         sbj_cate_idx = self.all_traj_cates[vid_id][sbj_tid]
-        objvec = self.objvecs[obj_cate_idx]
-        sbjvec = self.objvecs[sbj_cate_idx]
-        return np.concatenate((objvec, sbjvec))
+        obj_vec = self.obj_vecs[obj_cate_idx]
+        sbj_vec = self.obj_vecs[sbj_cate_idx]
+        return np.concatenate((obj_vec, sbj_vec))
 
     def _ext_spatial_feature(self, inst):
 
@@ -165,9 +164,52 @@ class VidOR(Dataset):
         body_feat = self.traj_feats[str(sbj_tid)][seg_idx][1:].reshape(-1)
         return sbj_feat, obj_feat, body_feat
 
-    def _load_object_vectors(self):
-        objvec_path = os.path.join(self.dataset_root, 'object_vectors.mat')
-        self.objvecs = sio.loadmat(objvec_path)['object_vectors']
+    def _load_object_vectors(self, ds_root):
+        # load object word2vec
+        o2v_path = os.path.join(ds_root, 'object_vectors.mat')
+        w2v_path = os.path.join(ds_root, 'GoogleNews-vectors-negative300.bin')
+        if not os.path.exists(o2v_path):
+            self._prepare_w2v(w2v_path, o2v_path)
+        with open(o2v_path, 'r') as f:
+            obj_vecs = pickle.load(f)
+        return obj_vecs
+
+    def _prepare_w2v(self, w2v_path, o2v_path):
+        import gensim
+        # load pre-trained word2vec model
+        print('Loading pretrained word vectors ...')
+        w2v_model = gensim.models.KeyedVectors.load_word2vec_format(w2v_path, binary=True)
+        obj_vecs = self._extract_object_vectors(w2v_model)
+
+        # save object label vectors
+        with open(o2v_path, 'w') as f:
+            pickle.dump(obj_vecs, f)
+        print('VidOR object word vectors saved at: %s' % o2v_path)
+
+    def _extract_object_vectors(self, w2v_model, vec_len=300, debug=False):
+        # object labels to vectors
+        print('Extracting word vectors for VidOR object labels ...')
+        obj_vecs = np.zeros((len(self.obj_ind2name), vec_len))
+        for i in range(len(self.obj_ind2name)):
+            obj_label = self.obj_ind2name[i]
+            obj_label = obj_label.split('/')[0]
+
+            if obj_label == 'traffic_light':
+                obj_label = 'signal'
+            if obj_label == 'stop_sign':
+                obj_label = 'sign'
+            if obj_label == 'baby_seat':
+                obj_label = 'stroller'
+            if obj_label == 'electric_fan':
+                obj_label = 'fan'
+            if obj_label == 'baby_walker':
+                obj_label = 'walker'
+
+            vec = w2v_model[obj_label]
+            if debug and vec is None or len(vec) == 0 or np.sum(vec) == 0:
+                print('[WARNING] %s' % obj_label)
+            obj_vecs[i] = vec
+        return obj_vecs
 
     def _load_category_sets(self):
         obj_cate_path = os.path.join(self.dataset_root, 'object_labels.txt')
