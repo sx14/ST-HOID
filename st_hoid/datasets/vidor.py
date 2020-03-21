@@ -2,7 +2,6 @@ import os
 import json
 import pickle
 from random import shuffle
-import scipy.io as sio
 from copy import deepcopy
 from math import log, e
 
@@ -17,6 +16,7 @@ class VidOR(Dataset):
         self.dataset_name = ds_name
         self.dataset_root = ds_root
         self.cache_root = cache_root
+        self.split = split
 
         if split == 'train':
             self.feat_root = os.path.join(ds_root, 'feat_gt', 'train')
@@ -320,7 +320,7 @@ class VidOR(Dataset):
 
     def _load_annotations(self):
 
-        cache_path = os.path.join(self.cache_root, '%s_anno_cache.bin' % self.dataset_name)
+        cache_path = os.path.join(self.cache_root, '%s_%s_anno_cache.bin' % (self.dataset_name, self.split))
         if os.path.exists(cache_path):
             print('%s found! loading ...' % cache_path)
             with open(cache_path) as f:

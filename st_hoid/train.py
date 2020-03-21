@@ -217,7 +217,7 @@ class Container:
                                                  'neg_acc': neg_acc}, curr_epoch * itr_num + itr)
                 if itr % self.print_freq == 0:
                     print('[epoch %d][%d/%d] loss: %.4f acc: %.4f pos_acc: %.4f neg_acc %.4f' %
-                          (curr_epoch, itr, itr_num, loss, acc, pos_acc, neg_acc))
+                          (curr_epoch+1, itr+1, itr_num, loss, acc, pos_acc, neg_acc))
 
             if self.eval:
                 eval_acc = self.evaluation()
