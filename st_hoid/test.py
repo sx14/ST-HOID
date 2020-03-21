@@ -169,7 +169,7 @@ class Tester:
         for i, rela_seg in enumerate(rela_segs):
             sbj_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 0]
             obj_feat[i] = tid2feat[rela_seg['obj_tid']][rela_seg['seg_id'], 0]
-            body_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 1:].view(-1)
+            body_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 1:].reshape(-1)
 
         return sbj_feat, obj_feat, body_feat
 
@@ -195,6 +195,8 @@ class Tester:
             body_feat_v = body_feat_v.cuda()
 
         probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
+        if self.use_gpu:
+            probs = probs.cpu()
         probs = probs.data.numpy()
         all_rela_segments = [[] for _ in range(len(rela_segments))]
 
@@ -207,7 +209,7 @@ class Tester:
                 rela_seg_copy = copy.deepcopy(rela_seg)
                 pred_pre_idx = rela_cls_top10[t]
                 pred_pre_scr = rela_probs[pred_pre_idx]
-                pred_pre = self.dataset.pre_ind2name[pred_pre_idx]
+                pred_pre = self.dataset.pre_cates[pred_pre_idx]
                 rela_seg_copy['pre_cls'] = pred_pre
                 rela_seg_copy['pre_scr'] = pred_pre_scr
                 all_rela_segments[i].append(rela_seg_copy)
@@ -297,7 +299,7 @@ class Tester:
     def run_video(self, vid_trajs, tid2feat):
 
         def get_sbjs_and_objs(ds, trajs):
-            sbjs = [ds.is_subject(traj['category']) for traj in trajs]
+            sbjs = [traj for traj in trajs if ds.is_subject(traj['category'])]
             objs = trajs
             return sbjs, objs
 
@@ -309,6 +311,7 @@ class Tester:
         sbjs, objs = get_sbjs_and_objs(self.dataset, vid_trajs)
         for sbj in sbjs:
             for obj in objs:
+                if sbj['tid'] == obj['tid']: continue
                 rela_cand_segs = self.generate_relation_segments(sbj, obj)
                 rela_cand_segs = self.predict_predicate(rela_cand_segs, tid2feat)
                 rela_instances = self.greedy_association(rela_cand_segs)
@@ -316,22 +319,36 @@ class Tester:
 
         return vid_relas
 
+    @staticmethod
+    def load_toi_feat(video_feat_root):
+        tid2feat = {}
+        feat_files = os.listdir(video_feat_root)
+        for feat_file in sorted(feat_files):
+            tid = feat_file.split('.')[0]
+            feat_path = os.path.join(video_feat_root, feat_file)
+            with open(feat_path) as f:
+                feat = pickle.load(f)
+            tid2feat[int(tid)] = feat
+        return tid2feat
+
     def run(self):
-        for pid_vid in sorted(self.all_trajs):
+        vid_num = len(self.all_trajs)
+        for i, pid_vid in enumerate(sorted(self.all_trajs.keys())):
             pid, vid = pid_vid.split('/')
+            print('[%d/%d] %s' % (i+1, vid_num, vid))
+
+            vid_save_path = os.path.join(self.output_root, vid + '.json')
+            if os.path.exists(vid_save_path):
+                with open(vid_save_path) as f:
+                    json.load(f)
+                continue
+
             vid_feat_root = os.path.join(self.feat_root, pid, vid)
-            feat_files = os.listdir(vid_feat_root)
-            tid2feat = {}
-            for feat_file in sorted(feat_files):
-                tid = feat_file.split('.')[0]
-                feat_path = os.path.join(vid_feat_root, feat_file)
-                with open(feat_path) as f:
-                    feat = pickle.load(f)
-                tid2feat[tid] = feat
+            tid2feat = self.load_toi_feat(vid_feat_root)
             vid_relas = self.run_video(self.all_trajs[pid_vid], tid2feat)
             vid_relas = self.filter(vid_relas, self.max_per_video)
             vid_relas = self.format(vid_relas)
-            vid_save_path = os.path.join(self.output_root, vid+'.json')
+            
             with open(vid_save_path, 'w') as f:
                 json.dump({vid: vid_relas}, f)
 
@@ -354,7 +371,8 @@ if __name__ == '__main__':
     print('Loading model ...')
     dataset = VidOR(dataset_name, dataset_root, cfg['test_split'], '../cache')
     model = FCNet(dataset.category_num('predicate'))
-    model_weight_path = os.path.join(cfg['weight_root'], '%s_%d.pkl' % (model.name, cfg['test_epoch']))
+    model_weight_path = os.path.join(cfg['weight_root'], cfg['dataset'], cfg['exp'],
+                                     '%s_%d.pkl' % (model.name, cfg['test_epoch']))
     model.load_weight(model_weight_path)
     model.eval()
 

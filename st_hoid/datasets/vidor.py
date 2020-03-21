@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import pickle
 from random import shuffle
@@ -62,10 +63,10 @@ class VidOR(Dataset):
         return len(self.all_insts)
 
     def is_subject(self, cate):
-        if isinstance(cate, str):
-            return cate in self.sbj_cates
-        else:
+        if isinstance(cate, int):
             return self.obj_cates[cate] in self.sbj_cates
+        else:
+            return cate in self.sbj_cates
 
     def split_self(self):
         self2 = deepcopy(self)
@@ -189,9 +190,9 @@ class VidOR(Dataset):
     def _extract_object_vectors(self, w2v_model, vec_len=300, debug=False):
         # object labels to vectors
         print('Extracting word vectors for VidOR object labels ...')
-        obj_vecs = np.zeros((len(self.obj_ind2name), vec_len))
-        for i in range(len(self.obj_ind2name)):
-            obj_label = self.obj_ind2name[i]
+        obj_vecs = np.zeros((len(self.obj_cates), vec_len))
+        for i in range(len(self.obj_cates)):
+            obj_label = self.obj_cates[i]
             obj_label = obj_label.split('/')[0]
 
             if obj_label == 'traffic_light':
@@ -322,7 +323,7 @@ class VidOR(Dataset):
 
         cache_path = os.path.join(self.cache_root, '%s_%s_anno_cache.bin' % (self.dataset_name, self.split))
         if os.path.exists(cache_path):
-            print('%s found! loading ...' % cache_path)
+            # print('%s found! loading ...' % cache_path)
             with open(cache_path) as f:
                 data_cache = pickle.load(f)
 
@@ -333,7 +334,8 @@ class VidOR(Dataset):
             self.all_inst_count = data_cache['all_inst_count']
             return
 
-        print('processing annotations ...')
+        print('Processing annotations ...')
+        time.sleep(2)
         self.all_vid_info = {}
         self.all_trajs = {}
         self.all_traj_cates = {}
