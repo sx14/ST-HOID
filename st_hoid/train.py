@@ -145,7 +145,7 @@ class Container:
             body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
             pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-            probs, scores, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
+            probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
 
             if self.use_gpu:
                 probs = probs.cpu()
@@ -199,7 +199,7 @@ class Container:
                 body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
                 pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-                probs, scores, loss = self.model(sbj_feat_v, obj_feat_v, body_feat_v,
+                probs, loss = self.model(sbj_feat_v, obj_feat_v, body_feat_v,
                                                  lan_feat_v, spa_feat_v, pre_label_v)
                 loss.backward()
                 self.optimizer.step()
