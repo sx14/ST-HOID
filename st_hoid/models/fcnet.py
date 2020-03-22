@@ -78,21 +78,28 @@ class FCNet(nn.Module):
 
     def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_label=None):
         sbj_score = self.sbj_branch(sbj_feat)
-        obj_socre = self.obj_branch(obj_feat)
+        obj_score = self.obj_branch(obj_feat)
         spa_score = self.spa_branch(spa_feat)
         lan_score = self.lan_branch(lan_feat)
+        score = sbj_score + obj_score + lan_score + spa_score
 
         if body_feat.sum() != 0:
             body_score = self.body_branch.forward(body_feat)
-            score = sbj_score + obj_socre + lan_score + spa_score + body_score
-        else:
-            score = sbj_score + obj_socre + lan_score + spa_score
+            score += body_score
 
         if self.training and pre_label is not None:
-            loss = cross_entropy(score, pre_label, size_average=False)
+            sbj_loss = cross_entropy(sbj_score, pre_label, size_average=False)
+            obj_loss = cross_entropy(obj_score, pre_label, size_average=False)
+            spa_loss = cross_entropy(spa_score, pre_label, size_average=False)
+            lan_loss = cross_entropy(lan_score, pre_label, size_average=False)
+            loss = sbj_loss + obj_loss + spa_loss + lan_loss
+            if body_feat.sum() != 0:
+                body_loss = cross_entropy(body_score, pre_label, size_average=False)
+                loss += body_loss
         else:
             loss = Variable(torch.FloatTensor(-1))
-        return softmax(score, dim=1), score, loss
+
+        return softmax(score, dim=1), loss
 
     def name(self):
         return self.name
