@@ -268,6 +268,7 @@ class Tester:
 
     @staticmethod
     def filter(rela_cands, max_per_video):
+        rela_cands = [rela_cand for rela_cand in rela_cands if rela_cand['pre_cls'] != '__no_interaction__']
         for rela_cand in rela_cands:
             rela_cand['score'] = rela_cand['sbj_scr'] * rela_cand['obj_scr'] * rela_cand['pre_scr']
         sorted_cands = sorted(rela_cands, key=lambda rela: rela['score'], reverse=True)
@@ -285,8 +286,8 @@ class Tester:
             obj_traj = rela['obj_traj']
             sbj_fid_boxes = sorted(sbj_traj.items(), key=lambda fid_box: int(fid_box[0]))
             obj_fid_boxes = sorted(obj_traj.items(), key=lambda fid_box: int(fid_box[0]))
-            stt_fid = int(sbj_fid_boxes[0][0])  # inclusive
-            end_fid = int(sbj_fid_boxes[-1][0]) + 1  # exclusive
+            stt_fid = int(sbj_fid_boxes[0][0])          # inclusive
+            end_fid = int(sbj_fid_boxes[-1][0]) + 1     # exclusive
             format_rela['duration'] = [stt_fid, end_fid]
 
             format_sbj_traj = [fid_box[1] for fid_box in sbj_fid_boxes]
@@ -348,7 +349,7 @@ class Tester:
             vid_relas = self.run_video(self.all_trajs[pid_vid], tid2feat)
             vid_relas = self.filter(vid_relas, self.max_per_video)
             vid_relas = self.format(vid_relas)
-            
+
             with open(vid_save_path, 'w') as f:
                 json.dump({vid: vid_relas}, f)
 

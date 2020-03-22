@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 from torch.nn.functional import softmax
+from torch.nn.functional import cross_entropy
+from torch.autograd import Variable
 
 
 class FCNet(nn.Module):
@@ -14,6 +16,14 @@ class FCNet(nn.Module):
             resume_dict[name] = param
         self.load_state_dict(resume_dict)
 
+    def train(self, mode=True):
+        self.training = mode
+        self.train(mode)
+
+    def eval(self):
+        self.training = False
+        self.eval()
+
     def __init__(self, cate_num,
                  sbj_feat_len=2048,
                  obj_feat_len=2048,
@@ -24,6 +34,7 @@ class FCNet(nn.Module):
         super(FCNet, self).__init__()
 
         self.name = 'fcnet'
+        self.training = False
 
         self.lan_branch = nn.Sequential(
             nn.LeakyReLU(),
@@ -65,18 +76,23 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(body_feat_lan, cate_num))
 
-    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat):
-        sbj_score = self.sbj_branch.forward(sbj_feat)
-        obj_socre = self.obj_branch.forward(obj_feat)
-        spa_score = self.spa_branch.forward(spa_feat)
-        lan_score = self.lan_branch.forward(lan_feat)
+    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_label=None):
+        sbj_score = self.sbj_branch(sbj_feat)
+        obj_socre = self.obj_branch(obj_feat)
+        spa_score = self.spa_branch(spa_feat)
+        lan_score = self.lan_branch(lan_feat)
 
         if body_feat.sum() != 0:
             body_score = self.body_branch.forward(body_feat)
             score = sbj_score + obj_socre + lan_score + spa_score + body_score
         else:
             score = sbj_score + obj_socre + lan_score + spa_score
-        return softmax(score, dim=1), score
+
+        if self.training and pre_label is not None:
+            loss = self.loss_func(score, pre_label, size_average=False)
+        else:
+            loss = Variable(torch.FloatTensor(-1))
+        return softmax(score, dim=1), score, loss
 
     def name(self):
         return self.name

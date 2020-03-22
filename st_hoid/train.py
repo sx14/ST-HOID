@@ -3,7 +3,6 @@ import shutil
 import yaml
 import numpy as np
 import torch
-from torch.nn.functional import cross_entropy
 from torch.autograd import Variable
 
 
@@ -38,7 +37,6 @@ class Container:
 
         # init model
         self.model = model
-        self.loss_func = cross_entropy
         self.optimizer = torch.optim.SGD([{'params': model.parameters()}],
                                          lr=self.lr_init,
                                          momentum=self.train_momentum,
@@ -147,7 +145,7 @@ class Container:
             body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
             pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-            probs, scores = self.model.forward(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
+            probs, scores, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
 
             if self.use_gpu:
                 probs = probs.cpu()
@@ -201,8 +199,8 @@ class Container:
                 body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
                 pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-                probs, scores = self.model.forward(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
-                loss = self.loss_func(scores, pre_label_v, size_average=False)
+                probs, scores, loss = self.model(sbj_feat_v, obj_feat_v, body_feat_v,
+                                                 lan_feat_v, spa_feat_v, pre_label_v)
                 loss.backward()
                 self.optimizer.step()
 

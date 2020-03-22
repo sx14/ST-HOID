@@ -360,7 +360,7 @@ class VidOR(Dataset):
                                 for traj_info in vid_anno['subject/objects']}
                 pos_insts = self._gen_positive_instances(vid_anno['relation_instances'], pkg_id, vid_id)
                 neg_insts = self._gen_negative_instances(vid_anno['relation_instances'], tid2dur, tid2cate_idx, pkg_id, vid_id)
-                vid_insts = pos_insts + neg_insts[:3 * len(pos_insts)]
+                vid_insts = pos_insts + neg_insts[: len(pos_insts)]
                 shuffle(vid_insts)
                 self.all_vid_info[vid_id] = vid_info
                 self.all_trajs[vid_id] = tid2traj
