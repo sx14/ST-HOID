@@ -17,12 +17,12 @@ class FCNet(nn.Module):
         self.load_state_dict(resume_dict)
 
     def train(self, mode=True):
+        super(FCNet, self).train(mode)
         self.training = mode
-        self.train(mode)
 
     def eval(self):
+        super(FCNet, self).eval()
         self.training = False
-        self.eval()
 
     def __init__(self, cate_num,
                  sbj_feat_len=2048,
@@ -89,7 +89,7 @@ class FCNet(nn.Module):
             score = sbj_score + obj_socre + lan_score + spa_score
 
         if self.training and pre_label is not None:
-            loss = self.loss_func(score, pre_label, size_average=False)
+            loss = cross_entropy(score, pre_label, size_average=False)
         else:
             loss = Variable(torch.FloatTensor(-1))
         return softmax(score, dim=1), score, loss
