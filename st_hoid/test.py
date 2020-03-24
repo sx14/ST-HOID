@@ -362,9 +362,15 @@ if __name__ == '__main__':
     with open(cfg_path) as f:
         cfg = yaml.load(f)
 
+    # mode: use GT/DET trajectories
+    use_gt_obj = cfg['test_use_gt_obj']
+
     # load detected trajectories
     print('Loading trajectory detections ...')
-    test_traj_det_path = '../data/%s/%s' % (dataset_name, cfg['test_traj_det'])
+    if not use_gt_obj:
+        test_traj_det_path = '../data/%s/%s' % (dataset_name, cfg['test_traj_det'])
+    else:
+        test_traj_det_path = '../data/%s/%s' % (dataset_name, cfg['test_traj_gt'])
     with open(test_traj_det_path) as f:
         test_trajs = json.load(f)['results']
 
@@ -379,7 +385,11 @@ if __name__ == '__main__':
 
     # init tester
     print('---- Testing start ----')
-    feat_root = '../data/%s/feat_pr/%s' % (dataset_name, cfg['test_split'])
+    if not use_gt_obj:
+        feat_root = '../data/%s/feat_pr/%s' % (dataset_name, cfg['test_split'])
+    else:
+        feat_root = '../data/%s/feat_gt/%s' % (dataset_name, cfg['test_split'])
+
     output_root = os.path.join(cfg['test_output_root'], dataset_name)
     tester = Tester(dataset, model, test_trajs, cfg['seg_len'],
                     cfg['test_max_per_video'], feat_root, output_root, cfg['use_gpu'])
