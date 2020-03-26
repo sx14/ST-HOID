@@ -56,7 +56,8 @@ class VidOR(Dataset):
         lan_feat = self._ext_language_feature(inst)
         spa_feat = self._ext_spatial_feature(inst)
         sbj_feat, obj_feat, body_feat, = self._ext_cnn_feature(inst)
-        pre_cate = inst['pre_cate']
+        pre_cate = np.zeros(len(self.pre_cates))
+        pre_cate[inst['pre_cate']] = 1
         return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_cate
 
     def __len__(self):

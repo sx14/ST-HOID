@@ -1,7 +1,7 @@
 import torch
 from torch import nn
-from torch.nn.functional import softmax
-from torch.nn.functional import cross_entropy
+from torch.nn.functional import softmax, sigmoid
+from torch.nn.functional import cross_entropy, binary_cross_entropy
 from torch.autograd import Variable
 
 
@@ -81,25 +81,36 @@ class FCNet(nn.Module):
         obj_score = self.obj_branch(obj_feat)
         spa_score = self.spa_branch(spa_feat)
         lan_score = self.lan_branch(lan_feat)
-        score = sbj_score + obj_score + lan_score + spa_score
+
+        sbj_prob = sigmoid(sbj_score)
+        obj_prob = sigmoid(obj_score)
+        spa_prob = sigmoid(spa_score)
+        lan_prob = sigmoid(lan_score)
+
+        branch_cnt = 4.0
+        prob = sbj_prob + obj_prob + lan_prob + spa_prob
 
         if body_feat.sum() != 0:
-            body_score = self.body_branch.forward(body_feat)
-            score += body_score
+            body_score = self.body_branch(body_feat)
+            body_prob = sigmoid(body_score)
+            branch_cnt += 1
+            prob += body_prob
 
         if self.training and pre_label is not None:
-            sbj_loss = cross_entropy(sbj_score, pre_label, size_average=False)
-            obj_loss = cross_entropy(obj_score, pre_label, size_average=False)
-            spa_loss = cross_entropy(spa_score, pre_label, size_average=False)
-            lan_loss = cross_entropy(lan_score, pre_label, size_average=False)
+            sbj_loss = binary_cross_entropy(sbj_prob, pre_label, size_average=False)
+            obj_loss = binary_cross_entropy(obj_prob, pre_label, size_average=False)
+            spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
+            lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
+
             loss = sbj_loss + obj_loss + spa_loss + lan_loss
             if body_feat.sum() != 0:
-                body_loss = cross_entropy(body_score, pre_label, size_average=False)
+                body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
                 loss += body_loss
         else:
             loss = Variable(torch.FloatTensor(-1))
 
-        return softmax(score, dim=1), loss
+        prob = prob / branch_cnt
+        return prob, loss
 
     def name(self):
         return self.name
