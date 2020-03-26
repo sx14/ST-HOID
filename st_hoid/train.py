@@ -52,6 +52,7 @@ class Container:
     @staticmethod
     def cal_acc(probs, labels):
         pre_labels = np.argmax(probs, axis=1)
+        labels = np.argmax(labels, axis=1)
         # print('-' * 48)
         # print(labels)
         # print(pre_labels)
@@ -119,7 +120,7 @@ class Container:
         lan_feat_v = Variable(torch.FloatTensor(1))
         spa_feat_v = Variable(torch.FloatTensor(1))
         body_feat_v = Variable(torch.FloatTensor(1))
-        pre_label_v = Variable(torch.LongTensor(1))
+        pre_label_v = Variable(torch.FloatTensor(1))
 
         if self.use_gpu:
             self.model.cuda()
@@ -171,7 +172,7 @@ class Container:
         lan_feat_v = Variable(torch.FloatTensor(1))
         spa_feat_v = Variable(torch.FloatTensor(1))
         body_feat_v = Variable(torch.FloatTensor(1))
-        pre_label_v = Variable(torch.LongTensor(1))
+        pre_label_v = Variable(torch.FloatTensor(1))
 
         if self.use_gpu:
             self.model.cuda()

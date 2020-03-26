@@ -95,9 +95,12 @@ def parse_args():
     parser.add_argument('--r', dest='resume',
                         help='resume checkpoint or not',
                         default=False, type=bool)
+    parser.add_argument('--scene', dest='scene',
+                        default=False, type=bool)
 
     args = parser.parse_args()
     return args
+
 
 def is_human(cate):
     return cate in {'adult', 'child', 'baby'}
@@ -232,6 +235,7 @@ if __name__ == '__main__':
     pool_feat_chnl = 2048
     body_part_num = 6
     seg_len = 10
+    scene_tid = -1
 
     print('feature extracting ...')
     for pkg_id in os.listdir(image_root):
@@ -276,6 +280,12 @@ if __name__ == '__main__':
                                                            pool_feat_chnl,
                                                            pool_feat_size,
                                                            pool_feat_size))
+            # scene
+            tid2cate[scene_tid] = '__scene__'
+            tid2feat[scene_tid] = np.zeros((num_segs, 1,
+                                            pool_feat_chnl,
+                                            pool_feat_size,
+                                            pool_feat_size))
 
             trajs = vid_anno['trajectories']
             for frm_idx in range(num_frames):
@@ -286,7 +296,10 @@ if __name__ == '__main__':
                           frm_det['bbox']['ymax'],
                           1.0]
                          for frm_det in trajs[frm_idx]]
+
+                boxes.append([0, 0, width, height, 1.0])    # scene
                 tids = [frm_det['tid'] for frm_det in trajs[frm_idx]]
+                tids.append(scene_tid)  # scene
                 cates = [tid2cate[tid] for tid in tids]
                 has_kps = [False] * len(tids)
 
