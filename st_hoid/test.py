@@ -173,18 +173,30 @@ class Tester:
 
         return sbj_feat, obj_feat, body_feat
 
+    def ext_pre_mask(self, rela_segs):
+        pre_masks = np.zeros((len(rela_segs), self.dataset.category_num('predicate')))
+        for i, rela_seg in enumerate(rela_segs):
+            sbj_cls_idx = self.dataset.obj_cate2idx[rela_seg['sbj_cls']]
+            obj_cls_idx = self.dataset.obj_cate2idx[rela_seg['obj_cls']]
+            sbj_pre_mask = self.dataset.sbj2pre_mask[sbj_cls_idx]
+            obj_pre_mask = self.dataset.obj2pre_mask[obj_cls_idx]
+            pre_masks[i] = sbj_pre_mask * obj_pre_mask
+        return pre_masks
+
     def predict_predicate(self, rela_segments, tid2feat):
         if len(rela_segments) == 0:
             return rela_segments
 
         lan_feat = self.ext_language_feat(rela_segments)
         spa_feat = self.ext_spatial_feat(rela_segments)
+        pre_mask = self.ext_pre_mask(rela_segments)
         sbj_feat, obj_feat, body_feat = self.ext_toi_feat(rela_segments, tid2feat)
 
         sbj_feat_v = Variable(torch.from_numpy(sbj_feat)).float()
         obj_feat_v = Variable(torch.from_numpy(obj_feat)).float()
         lan_feat_v = Variable(torch.from_numpy(lan_feat)).float()
         spa_feat_v = Variable(torch.from_numpy(spa_feat)).float()
+        pre_mask_v = Variable(torch.from_numpy(pre_mask)).float()
         body_feat_v = Variable(torch.from_numpy(body_feat)).float()
 
         if self.use_gpu:
@@ -192,9 +204,10 @@ class Tester:
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
             spa_feat_v = spa_feat_v.cuda()
+            pre_mask_v = pre_mask_v.cuda()
             body_feat_v = body_feat_v.cuda()
 
-        probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
+        probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v, pre_mask_v)
         if self.use_gpu:
             probs = probs.cpu()
         probs = probs.data.numpy()

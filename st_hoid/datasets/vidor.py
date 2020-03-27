@@ -44,7 +44,10 @@ class VidOR(Dataset):
         self.all_vid_info = None
         self.all_traj_cates = None
         self.all_inst_count = None
+        self.obj2pre_mask = None
+        self.sbj2pre_mask = None
         self._load_annotations()
+        self._gen_pre_mask()
         self.obj_vecs = self._load_object_vectors(ds_root)
 
         self.curr_pkg_id = -1
@@ -58,7 +61,16 @@ class VidOR(Dataset):
         sbj_feat, obj_feat, body_feat, = self._ext_cnn_feature(inst)
         pre_cate = np.zeros(len(self.pre_cates))
         pre_cate[inst['pre_cate']] = 1
-        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_cate
+
+        vid_id = inst['vid_id']
+        sbj_tid = inst['sbj_tid']
+        obj_tid = inst['obj_tid']
+        sbj_cate = self.all_traj_cates[vid_id][sbj_tid]
+        obj_cate = self.all_traj_cates[vid_id][obj_tid]
+        sbj_pre_mask = self.sbj2pre_mask[sbj_cate]
+        obj_pre_mask = self.obj2pre_mask[obj_cate]
+        pre_mask = sbj_pre_mask * obj_pre_mask
+        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_mask, pre_cate
 
     def __len__(self):
         return len(self.all_insts)
@@ -250,6 +262,24 @@ class VidOR(Dataset):
         for tid in tid2traj:
             tid2traj[tid] = np.array(tid2traj[tid]).astype(np.int)
         return tid2traj, tid2dur
+
+    def _gen_pre_mask(self):
+        sbj2pre_mask = np.zeros((self.category_num('object'), self.category_num('predicate')))
+        obj2pre_mask = np.zeros((self.category_num('object'), self.category_num('predicate')))
+
+        for inst in self.all_insts:
+            vid = inst['vid_id']
+            sbj_tid = inst['sbj_tid']
+            obj_tid = inst['obj_tid']
+            sbj_cate = self.all_traj_cates[vid][sbj_tid]
+            obj_cate = self.all_traj_cates[vid][obj_tid]
+            pre_cate = inst['pre_cate']
+            obj2pre_mask[obj_cate, pre_cate] = 1
+            sbj2pre_mask[sbj_cate, pre_cate] = 1
+
+        self.obj2pre_mask = obj2pre_mask
+        self.sbj2pre_mask = sbj2pre_mask
+
 
     def _gen_positive_instances(self, org_insts, pkg_id, vid_id):
         insts = []

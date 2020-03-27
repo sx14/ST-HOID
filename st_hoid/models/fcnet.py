@@ -76,7 +76,7 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(body_feat_lan, cate_num))
 
-    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_label=None):
+    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_mask, pre_label=None):
         sbj_score = self.sbj_branch(sbj_feat)
         obj_score = self.obj_branch(obj_feat)
         spa_score = self.spa_branch(spa_feat)
@@ -87,12 +87,18 @@ class FCNet(nn.Module):
         spa_prob = sigmoid(spa_score)
         lan_prob = sigmoid(lan_score)
 
+        sbj_prob = sbj_prob * pre_mask
+        obj_prob = obj_prob * pre_mask
+        spa_prob = spa_prob * pre_mask
+        lan_prob = lan_prob * pre_mask
+
         branch_cnt = 4.0
         prob = sbj_prob + obj_prob + lan_prob + spa_prob
 
         if body_feat.sum() != 0:
             body_score = self.body_branch(body_feat)
             body_prob = sigmoid(body_score)
+            body_prob = body_prob * pre_mask
             branch_cnt += 1
             prob += body_prob
 

@@ -119,6 +119,7 @@ class Container:
         obj_feat_v = Variable(torch.FloatTensor(1))
         lan_feat_v = Variable(torch.FloatTensor(1))
         spa_feat_v = Variable(torch.FloatTensor(1))
+        pre_mask_v = Variable(torch.FloatTensor(1))
         body_feat_v = Variable(torch.FloatTensor(1))
         pre_label_v = Variable(torch.FloatTensor(1))
 
@@ -128,6 +129,7 @@ class Container:
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
             spa_feat_v = spa_feat_v.cuda()
+            pre_mask_v = pre_mask_v.cuda()
             body_feat_v = body_feat_v.cuda()
             pre_label_v = pre_label_v.cuda()
 
@@ -138,15 +140,16 @@ class Container:
         for itr, data in enumerate(data_loader_val):
 
             sbj_feat, obj_feat, body_feat, \
-            lan_feat, spa_feat, pre_label = data
+            lan_feat, spa_feat, pre_mask, pre_label = data
             sbj_feat_v.data.resize_(sbj_feat.size()).copy_(sbj_feat)
             obj_feat_v.data.resize_(obj_feat.size()).copy_(obj_feat)
             lan_feat_v.data.resize_(lan_feat.size()).copy_(lan_feat)
             spa_feat_v.data.resize_(spa_feat.size()).copy_(spa_feat)
+            pre_mask_v.data.resize_(pre_mask.size()).copy_(pre_mask)
             body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
             pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-            probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v)
+            probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v, pre_mask)
 
             if self.use_gpu:
                 probs = probs.cpu()
@@ -171,6 +174,7 @@ class Container:
         obj_feat_v = Variable(torch.FloatTensor(1))
         lan_feat_v = Variable(torch.FloatTensor(1))
         spa_feat_v = Variable(torch.FloatTensor(1))
+        pre_mask_v = Variable(torch.FloatTensor(1))
         body_feat_v = Variable(torch.FloatTensor(1))
         pre_label_v = Variable(torch.FloatTensor(1))
 
@@ -180,6 +184,7 @@ class Container:
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
             spa_feat_v = spa_feat_v.cuda()
+            pre_mask_v = pre_mask_v.cuda()
             body_feat_v = body_feat_v.cuda()
             pre_label_v = pre_label_v.cuda()
 
@@ -192,16 +197,17 @@ class Container:
                 self.optimizer.zero_grad()
 
                 sbj_feat, obj_feat, body_feat, \
-                lan_feat, spa_feat, pre_label = data
+                lan_feat, spa_feat, pre_mask, pre_label = data
                 sbj_feat_v.data.resize_(sbj_feat.size()).copy_(sbj_feat)
                 obj_feat_v.data.resize_(obj_feat.size()).copy_(obj_feat)
                 lan_feat_v.data.resize_(lan_feat.size()).copy_(lan_feat)
                 spa_feat_v.data.resize_(spa_feat.size()).copy_(spa_feat)
+                pre_mask_v.data.resize_(pre_mask.size()).copy_(pre_mask)
                 body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
                 pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
                 probs, loss = self.model(sbj_feat_v, obj_feat_v, body_feat_v,
-                                                 lan_feat_v, spa_feat_v, pre_label_v)
+                                         lan_feat_v, spa_feat_v, pre_mask_v, pre_label_v)
                 loss.backward()
                 self.optimizer.step()
 
