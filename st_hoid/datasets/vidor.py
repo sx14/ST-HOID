@@ -57,7 +57,7 @@ class VidOR(Dataset):
         inst = self.all_insts[item]
         lan_feat = self._ext_language_feature(inst)
         spa_feat = self._ext_spatial_feature(inst)
-        sbj_feat, obj_feat, body_feat, = self._ext_cnn_feature(inst)
+        sbj_feat, obj_feat, sce_feat, body_feat = self._ext_cnn_feature(inst)
         pre_cate = np.zeros(len(self.pre_cates))
         pre_cate[inst['pre_cate']] = 1
 
@@ -69,7 +69,7 @@ class VidOR(Dataset):
         sbj_pre_mask = self.sbj2pre_mask[sbj_cate]
         obj_pre_mask = self.obj2pre_mask[obj_cate]
         pre_mask = sbj_pre_mask * obj_pre_mask
-        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, pre_mask, pre_cate
+        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, pre_mask, pre_cate
 
     def __len__(self):
         return len(self.all_insts)
@@ -170,12 +170,14 @@ class VidOR(Dataset):
 
         sbj_tid = inst['sbj_tid']
         obj_tid = inst['obj_tid']
+        sce_tid = inst['sce_tid']
         stt_fid = inst['stt_fid']
         seg_idx = int(stt_fid / self.SEG_LEN)
         obj_feat = self.traj_feats[str(obj_tid)][seg_idx][0]
         sbj_feat = self.traj_feats[str(sbj_tid)][seg_idx][0]
+        sce_feat = self.traj_feats[str(sce_tid)][seg_idx][0]
         body_feat = self.traj_feats[str(sbj_tid)][seg_idx][1:].reshape(-1)
-        return sbj_feat, obj_feat, body_feat
+        return sbj_feat, obj_feat, sce_feat, body_feat
 
     def _load_object_vectors(self, ds_root):
         # load object word2vec
@@ -346,6 +348,7 @@ class VidOR(Dataset):
                         'end_fid': frm_idx + self.SEG_LEN,
                         'sbj_tid': sbj_tid,
                         'obj_tid': obj_tid,
+                        'sce_tid': -1,
                         'pre_cate': self.pre_cate2idx['__no_interaction__']})
         return neg_insts
 
@@ -392,7 +395,8 @@ class VidOR(Dataset):
                                 for traj_info in vid_anno['subject/objects']}
                 pos_insts = self._gen_positive_instances(vid_anno['relation_instances'], pkg_id, vid_id)
                 neg_insts = self._gen_negative_instances(vid_anno['relation_instances'], tid2dur, tid2cate_idx, pkg_id, vid_id)
-                vid_insts = pos_insts + neg_insts[: len(pos_insts)]
+                # vid_insts = pos_insts + neg_insts[: len(pos_insts)]
+                vid_insts = pos_insts
                 shuffle(vid_insts)
                 self.all_vid_info[vid_id] = vid_info
                 self.all_trajs[vid_id] = tid2traj

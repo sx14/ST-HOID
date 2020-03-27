@@ -263,6 +263,7 @@ if __name__ == '__main__':
     pool_feat_chnl = 2048
     body_part_num = 6
     seg_len = 10
+    scene_tid = -1
 
     det_path = os.path.join(args.data_root, 'object_trajectories_%s_det_with_pose.json' % args.split)
     with open(det_path) as f:
@@ -307,6 +308,12 @@ if __name__ == '__main__':
                                           pool_feat_chnl,
                                           pool_feat_size,
                                           pool_feat_size))
+        # scene
+        tid2cate[scene_tid] = '__scene__'
+        tid2feat[scene_tid] = np.zeros((num_segs, 1,
+                                        pool_feat_chnl,
+                                        pool_feat_size,
+                                        pool_feat_size))
 
         fid2dets = load_frame_dets(vid_trajs)
         for frm_idx in range(len(fid2dets)):
@@ -316,7 +323,9 @@ if __name__ == '__main__':
                       frm_det['bbox']['xmax'],
                       frm_det['bbox']['ymax'], 1.0]
                      for frm_det in fid2dets[frm_idx]]
+            boxes.append([0, 0, width, height, 1.0])  # scene
             tids = [frm_det['tid'] for frm_det in fid2dets[frm_idx]]
+            tids.append(scene_tid)  # scene
             cates = [tid2cate[tid] for tid in tids]
             has_kps = [False] * len(tids)
 

@@ -149,7 +149,7 @@ class Container:
             body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
             pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-            probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v, pre_mask)
+            probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v, pre_mask_v)
 
             if self.use_gpu:
                 probs = probs.cpu()
