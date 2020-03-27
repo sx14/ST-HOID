@@ -47,7 +47,6 @@ class VidOR(Dataset):
         self.obj2pre_mask = None
         self.sbj2pre_mask = None
         self._load_annotations()
-        self._gen_pre_mask()
         self.obj_vecs = self._load_object_vectors(ds_root)
 
         self.curr_pkg_id = -1
@@ -363,6 +362,8 @@ class VidOR(Dataset):
             self.all_vid_info = data_cache['all_vid_info']
             self.all_traj_cates = data_cache['all_traj_cates']
             self.all_inst_count = data_cache['all_inst_count']
+            self.sbj2pre_mask = data_cache['sbj2pre_mask']
+            self.obj2pre_mask = data_cache['obj2pre_mask']
             return
 
         print('Processing annotations ...')
@@ -399,6 +400,8 @@ class VidOR(Dataset):
                 self.all_insts += vid_insts
                 self.all_inst_count.append(len(vid_insts))
 
+        self._gen_pre_mask()
+
         if not os.path.exists(self.cache_root):
             os.makedirs(self.cache_root)
 
@@ -407,5 +410,7 @@ class VidOR(Dataset):
                          'all_insts': self.all_insts,
                          'all_vid_info': self.all_vid_info,
                          'all_traj_cates': self.all_traj_cates,
-                         'all_inst_count': self.all_inst_count}, f)
+                         'all_inst_count': self.all_inst_count,
+                         'sbj2pre_mask': self.sbj2pre_mask,
+                         'obj2pre_mask': self.obj2pre_mask}, f)
         print('%s created' % cache_path)
