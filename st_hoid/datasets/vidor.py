@@ -281,7 +281,6 @@ class VidOR(Dataset):
         self.obj2pre_mask = obj2pre_mask
         self.sbj2pre_mask = sbj2pre_mask
 
-
     def _gen_positive_instances(self, org_insts, pkg_id, vid_id):
         insts = []
         seg_len = self.SEG_LEN
@@ -303,6 +302,7 @@ class VidOR(Dataset):
                     'end_fid': seg_end_frm_idx,
                     'sbj_tid': sbj_tid,
                     'obj_tid': obj_tid,
+                    'sce_tid': -1,
                     'pre_cate': self.pre_cate2idx[pre_cate]})
         return insts
 
