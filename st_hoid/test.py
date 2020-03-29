@@ -88,6 +88,7 @@ class Tester:
                        'obj_scr': obj_scr,
                        'sbj_tid': sbj_tid,
                        'obj_tid': obj_tid,
+                       'sce_tid': -1,
                        'vid_h': video_h,
                        'vid_w': video_w,
                        'connected': False}
@@ -164,14 +165,16 @@ class Tester:
 
         sbj_feat = np.zeros((len(rela_segs), feat_len))
         obj_feat = np.zeros((len(rela_segs), feat_len))
+        sce_feat = np.zeros((len(rela_segs), feat_len))
         body_feat = np.zeros((len(rela_segs), feat_len * body_part_num))
 
         for i, rela_seg in enumerate(rela_segs):
             sbj_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 0]
             obj_feat[i] = tid2feat[rela_seg['obj_tid']][rela_seg['seg_id'], 0]
+            sce_feat[i] = tid2feat[rela_seg['sce_tid']][rela_seg['seg_id'], 0]
             body_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 1:].reshape(-1)
 
-        return sbj_feat, obj_feat, body_feat
+        return sbj_feat, obj_feat, sce_feat, body_feat
 
     def ext_pre_mask(self, rela_segs):
         pre_masks = np.zeros((len(rela_segs), self.dataset.category_num('predicate')))
@@ -190,12 +193,13 @@ class Tester:
         lan_feat = self.ext_language_feat(rela_segments)
         spa_feat = self.ext_spatial_feat(rela_segments)
         pre_mask = self.ext_pre_mask(rela_segments)
-        sbj_feat, obj_feat, body_feat = self.ext_toi_feat(rela_segments, tid2feat)
+        sbj_feat, obj_feat, sce_feat, body_feat = self.ext_toi_feat(rela_segments, tid2feat)
 
         sbj_feat_v = Variable(torch.from_numpy(sbj_feat)).float()
         obj_feat_v = Variable(torch.from_numpy(obj_feat)).float()
         lan_feat_v = Variable(torch.from_numpy(lan_feat)).float()
         spa_feat_v = Variable(torch.from_numpy(spa_feat)).float()
+        sce_feat_v = Variable(torch.from_numpy(sce_feat)).float()
         pre_mask_v = Variable(torch.from_numpy(pre_mask)).float()
         body_feat_v = Variable(torch.from_numpy(body_feat)).float()
 
@@ -204,10 +208,12 @@ class Tester:
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
             spa_feat_v = spa_feat_v.cuda()
+            sce_feat_v = sce_feat_v.cuda()
             pre_mask_v = pre_mask_v.cuda()
             body_feat_v = body_feat_v.cuda()
 
-        probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v, spa_feat_v, pre_mask_v)
+        probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v,
+                              lan_feat_v, spa_feat_v, sce_feat_v, pre_mask_v)
         if self.use_gpu:
             probs = probs.cpu()
         probs = probs.data.numpy()
