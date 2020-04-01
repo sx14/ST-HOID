@@ -58,8 +58,13 @@ class VidOR(Dataset):
         lan_feat = self._ext_language_feature(inst)
         spa_feat = self._ext_spatial_feature(inst)
         sbj_feat, obj_feat, sce_feat, body_feat = self._ext_cnn_feature(inst)
-        pre_cate = np.zeros(len(self.pre_cates))
-        pre_cate[inst['pre_cate']] = 1
+
+        adj_mat = np.ones((9, 9))
+        rowsum = adj_mat.sum(1)
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.
+        r_mat_inv = np.diag(r_inv)
+        adj_mat = r_mat_inv.dot(adj_mat)
 
         vid_id = inst['vid_id']
         sbj_tid = inst['sbj_tid']
@@ -69,7 +74,9 @@ class VidOR(Dataset):
         sbj_pre_mask = self.sbj2pre_mask[sbj_cate]
         obj_pre_mask = self.obj2pre_mask[obj_cate]
         pre_mask = sbj_pre_mask * obj_pre_mask
-        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, pre_mask, pre_cate
+        pre_cate = np.zeros(len(self.pre_cates))
+        pre_cate[inst['pre_cate']] = 1
+        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, adj_mat, pre_mask, pre_cate
 
     def __len__(self):
         return len(self.all_insts)

@@ -4,6 +4,8 @@ from torch.nn.functional import softmax, sigmoid
 from torch.nn.functional import cross_entropy, binary_cross_entropy
 from torch.autograd import Variable
 
+from gcn import GCN
+
 
 class FCNet(nn.Module):
 
@@ -34,8 +36,10 @@ class FCNet(nn.Module):
 
         super(FCNet, self).__init__()
 
-        self.name = 'fcnet'
+        self.name = 'fc_gcn_net'
         self.training = False
+
+        self.gcn = GCN(2048, 2048, 2048, 0.5)
 
         self.lan_branch = nn.Sequential(
             nn.LeakyReLU(),
@@ -85,7 +89,20 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(body_feat_lan, cate_num))
 
-    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, pre_mask, pre_label=None):
+    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, adj_mat, pre_mask, pre_label=None):
+        sbj_feat = sbj_feat.unsqeeze(1)
+        obj_feat = obj_feat.unsqeeze(1)
+        sce_feat = sce_feat.unsqeeze(1)
+        body_feat = body_feat.view(body_feat.shape[0], 6, -1)
+
+        all_vis_feat = torch.cat((sbj_feat, obj_feat, sce_feat, body_feat), 1)
+        all_vis_feat = self.gcn(all_vis_feat)
+
+        sbj_feat = all_vis_feat[:, 0].squeeze(1)
+        obj_feat = all_vis_feat[:, 1].squeeze(1)
+        sce_feat = all_vis_feat[:, 2].squeeze(1)
+        body_feat = all_vis_feat[:, 3:].view(all_vis_feat.shape[0], -1)
+
         sbj_score = self.sbj_branch(sbj_feat)
         obj_score = self.obj_branch(obj_feat)
         spa_score = self.spa_branch(spa_feat)
