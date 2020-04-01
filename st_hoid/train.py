@@ -115,6 +115,7 @@ class Container:
 
     def evaluation(self):
 
+        adj_mat_v = Variable(torch.FloatTensor(1))
         sbj_feat_v = Variable(torch.FloatTensor(1))
         obj_feat_v = Variable(torch.FloatTensor(1))
         lan_feat_v = Variable(torch.FloatTensor(1))
@@ -126,6 +127,7 @@ class Container:
 
         if self.use_gpu:
             self.model.cuda()
+            adj_mat_v = adj_mat_v.cuda()
             sbj_feat_v = sbj_feat_v.cuda()
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
@@ -141,8 +143,9 @@ class Container:
         data_loader_val = torch.utils.data.DataLoader(self.dataset_val, batch_size=self.batch_size)
         for itr, data in enumerate(data_loader_val):
 
-            sbj_feat, obj_feat, body_feat, lan_feat, \
+            adj_mat, sbj_feat, obj_feat, body_feat, lan_feat, \
             spa_feat, sce_feat, pre_mask, pre_label = data
+            adj_mat_v.data.resize_(sbj_feat.size()).copy_(adj_mat)
             sbj_feat_v.data.resize_(sbj_feat.size()).copy_(sbj_feat)
             obj_feat_v.data.resize_(obj_feat.size()).copy_(obj_feat)
             lan_feat_v.data.resize_(lan_feat.size()).copy_(lan_feat)
@@ -152,8 +155,8 @@ class Container:
             body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
             pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-            probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v,
-                                  spa_feat_v, sce_feat_v, pre_mask_v, pre_label_v)
+            probs, _ = self.model(adj_mat_v,  sbj_feat_v, obj_feat_v, body_feat_v,
+                                  lan_feat_v, spa_feat_v, sce_feat_v, pre_mask_v, pre_label_v)
 
             if self.use_gpu:
                 probs = probs.cpu()
@@ -174,6 +177,7 @@ class Container:
         if self.is_resume:
             curr_epoch = self.resume()
 
+        adj_mat_v = Variable(torch.FloatTensor(1))
         sbj_feat_v = Variable(torch.FloatTensor(1))
         obj_feat_v = Variable(torch.FloatTensor(1))
         lan_feat_v = Variable(torch.FloatTensor(1))
@@ -185,6 +189,7 @@ class Container:
 
         if self.use_gpu:
             self.model.cuda()
+            adj_mat_v = adj_mat_v.cuda()
             sbj_feat_v = sbj_feat_v.cuda()
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
@@ -202,8 +207,9 @@ class Container:
             for itr, data in enumerate(data_loader_train):
                 self.optimizer.zero_grad()
 
-                sbj_feat, obj_feat, body_feat, lan_feat, \
+                adj_mat, sbj_feat, obj_feat, body_feat, lan_feat, \
                 spa_feat, sce_feat, pre_mask, pre_label = data
+                adj_mat_v.data.resize_(sbj_feat.size()).copy_(adj_mat)
                 sbj_feat_v.data.resize_(sbj_feat.size()).copy_(sbj_feat)
                 obj_feat_v.data.resize_(obj_feat.size()).copy_(obj_feat)
                 lan_feat_v.data.resize_(lan_feat.size()).copy_(lan_feat)
@@ -213,8 +219,8 @@ class Container:
                 body_feat_v.data.resize_(body_feat.size()).copy_(body_feat)
                 pre_label_v.data.resize_(pre_label.size()).copy_(pre_label)
 
-                probs, loss = self.model(sbj_feat_v, obj_feat_v, body_feat_v, lan_feat_v,
-                                         spa_feat_v, sce_feat_v, pre_mask_v, pre_label_v)
+                probs, loss = self.model(adj_mat_v,  sbj_feat_v, obj_feat_v, body_feat_v,
+                                         lan_feat_v, spa_feat_v, sce_feat_v, pre_mask_v, pre_label_v)
                 loss.backward()
                 self.optimizer.step()
 

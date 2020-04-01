@@ -76,7 +76,7 @@ class VidOR(Dataset):
         pre_mask = sbj_pre_mask * obj_pre_mask
         pre_cate = np.zeros(len(self.pre_cates))
         pre_cate[inst['pre_cate']] = 1
-        return sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, adj_mat, pre_mask, pre_cate
+        return adj_mat, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, pre_mask, pre_cate
 
     def __len__(self):
         return len(self.all_insts)

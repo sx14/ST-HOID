@@ -89,7 +89,7 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(body_feat_lan, cate_num))
 
-    def forward(self, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, adj_mat, pre_mask, pre_label=None):
+    def forward(self, adj_mat, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, pre_mask, pre_label=None):
         sbj_feat = sbj_feat.unsqeeze(1)
         obj_feat = obj_feat.unsqeeze(1)
         sce_feat = sce_feat.unsqeeze(1)
