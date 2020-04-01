@@ -173,6 +173,8 @@ class Tester:
             obj_feat[i] = tid2feat[rela_seg['obj_tid']][rela_seg['seg_id'], 0]
             sce_feat[i] = tid2feat[rela_seg['sce_tid']][rela_seg['seg_id'], 0]
             body_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 1:].reshape(-1)
+            if body_feat[i].sum() == 0:
+                body_feat[i] = np.tile(sbj_feat[i], body_part_num)
 
         return sbj_feat, obj_feat, sce_feat, body_feat
 

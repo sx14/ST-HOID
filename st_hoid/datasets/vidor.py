@@ -177,6 +177,9 @@ class VidOR(Dataset):
         sbj_feat = self.traj_feats[str(sbj_tid)][seg_idx][0]
         sce_feat = self.traj_feats[str(sce_tid)][seg_idx][0]
         body_feat = self.traj_feats[str(sbj_tid)][seg_idx][1:].reshape(-1)
+        body_part_num = self.traj_feats[str(sbj_tid)][seg_idx].shape[0] - 1
+        if body_feat.sum() == 0:
+            body_feat = np.tile(sbj_feat, body_part_num)
         return sbj_feat, obj_feat, sce_feat, body_feat
 
     def _load_object_vectors(self, ds_root):
