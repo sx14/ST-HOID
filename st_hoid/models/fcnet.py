@@ -98,10 +98,10 @@ class FCNet(nn.Module):
         all_vis_feat = torch.cat((sbj_feat, obj_feat, sce_feat, body_feat), 1)
         all_vis_feat = self.gcn(all_vis_feat, adj_mat)
 
-        sbj_feat = all_vis_feat[:, 0].squeeze(1)
-        obj_feat = all_vis_feat[:, 1].squeeze(1)
-        sce_feat = all_vis_feat[:, 2].squeeze(1)
-        body_feat = all_vis_feat[:, 3:].view(all_vis_feat.shape[0], -1)
+        sbj_feat = sbj_feat + all_vis_feat[:, 0].squeeze(1)
+        obj_feat = obj_feat + all_vis_feat[:, 1].squeeze(1)
+        sce_feat = sce_feat + all_vis_feat[:, 2].squeeze(1)
+        body_feat = body_feat + all_vis_feat[:, 3:].view(all_vis_feat.shape[0], -1)
 
         sbj_score = self.sbj_branch(sbj_feat)
         obj_score = self.obj_branch(obj_feat)
