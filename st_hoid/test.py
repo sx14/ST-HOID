@@ -178,6 +178,16 @@ class Tester:
 
         return sbj_feat, obj_feat, sce_feat, body_feat
 
+    @staticmethod
+    def gen_adj_mat():
+        adj_mat = np.ones((9, 9))
+        rowsum = adj_mat.sum(1)
+        r_inv = np.power(rowsum, -1).flatten()
+        r_inv[np.isinf(r_inv)] = 0.
+        r_mat_inv = np.diag(r_inv)
+        adj_mat = r_mat_inv.dot(adj_mat)
+        return adj_mat
+
     def ext_pre_mask(self, rela_segs):
         pre_masks = np.zeros((len(rela_segs), self.dataset.category_num('predicate')))
         for i, rela_seg in enumerate(rela_segs):
@@ -192,11 +202,13 @@ class Tester:
         if len(rela_segments) == 0:
             return rela_segments
 
+        adj_mat = self.gen_adj_mat()
         lan_feat = self.ext_language_feat(rela_segments)
         spa_feat = self.ext_spatial_feat(rela_segments)
         pre_mask = self.ext_pre_mask(rela_segments)
         sbj_feat, obj_feat, sce_feat, body_feat = self.ext_toi_feat(rela_segments, tid2feat)
 
+        adj_mat_v = Variable(torch.from_numpy(adj_mat)).float()
         sbj_feat_v = Variable(torch.from_numpy(sbj_feat)).float()
         obj_feat_v = Variable(torch.from_numpy(obj_feat)).float()
         lan_feat_v = Variable(torch.from_numpy(lan_feat)).float()
@@ -206,6 +218,7 @@ class Tester:
         body_feat_v = Variable(torch.from_numpy(body_feat)).float()
 
         if self.use_gpu:
+            adj_mat_v = adj_mat_v.cuda()
             sbj_feat_v = sbj_feat_v.cuda()
             obj_feat_v = obj_feat_v.cuda()
             lan_feat_v = lan_feat_v.cuda()
@@ -214,7 +227,7 @@ class Tester:
             pre_mask_v = pre_mask_v.cuda()
             body_feat_v = body_feat_v.cuda()
 
-        probs, _ = self.model(sbj_feat_v, obj_feat_v, body_feat_v,
+        probs, _ = self.model(adj_mat_v, sbj_feat_v, obj_feat_v, body_feat_v,
                               lan_feat_v, spa_feat_v, sce_feat_v, pre_mask_v)
         if self.use_gpu:
             probs = probs.cpu()
