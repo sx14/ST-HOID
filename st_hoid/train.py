@@ -209,7 +209,7 @@ class Container:
 
                 adj_mat, sbj_feat, obj_feat, body_feat, lan_feat, \
                 spa_feat, sce_feat, pre_mask, pre_label = data
-                adj_mat_v.data.resize_(sbj_feat.size()).copy_(adj_mat)
+                adj_mat_v.data.resize_(adj_mat.size()).copy_(adj_mat)
                 sbj_feat_v.data.resize_(sbj_feat.size()).copy_(sbj_feat)
                 obj_feat_v.data.resize_(obj_feat.size()).copy_(obj_feat)
                 lan_feat_v.data.resize_(lan_feat.size()).copy_(lan_feat)
