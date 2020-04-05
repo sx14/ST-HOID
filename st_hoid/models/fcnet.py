@@ -41,6 +41,11 @@ class FCNet(nn.Module):
 
         self.gcn = GCN(2048, 2048, 2048, 0.5)
 
+        self.obj_attention = nn.Sequential(
+            nn.Linear(300, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 6))
+
         self.lan_branch = nn.Sequential(
             nn.LeakyReLU(),
             nn.Dropout(p=0.5),
@@ -101,30 +106,38 @@ class FCNet(nn.Module):
         sbj_feat = sbj_feat.squeeze(1) + all_vis_feat[:, 0].squeeze(1)
         obj_feat = obj_feat.squeeze(1) + all_vis_feat[:, 1].squeeze(1)
         sce_feat = sce_feat.squeeze(1) + all_vis_feat[:, 2].squeeze(1)
-        body_feat = body_feat.view(body_feat.shape[0], -1) + all_vis_feat[:, 3:].view(all_vis_feat.shape[0], -1)
+        body_feat = body_feat + all_vis_feat[:, 3:]
+        lan_att = self.obj_attention(lan_feat)
+        body_feat = body_feat + body_feat * lan_att
+        body_feat = body_feat.view(body_feat.shape[0], -1)
 
         sbj_score = self.sbj_branch(sbj_feat)
         obj_score = self.obj_branch(obj_feat)
-        spa_score = self.spa_branch(spa_feat)
-        lan_score = self.lan_branch(lan_feat)
+        # spa_score = self.spa_branch(spa_feat)
+        # lan_score = self.lan_branch(lan_feat)
         sce_score = self.sce_branch(sce_feat)
 
         sbj_prob = sigmoid(sbj_score)
         obj_prob = sigmoid(obj_score)
-        spa_prob = sigmoid(spa_score)
-        lan_prob = sigmoid(lan_score)
+        # spa_prob = sigmoid(spa_score)
+        # lan_prob = sigmoid(lan_score)
         sce_prob = sigmoid(sce_score)
 
         sbj_prob = sbj_prob * pre_mask
         obj_prob = obj_prob * pre_mask
-        spa_prob = spa_prob * pre_mask
-        lan_prob = lan_prob * pre_mask
+        # spa_prob = spa_prob * pre_mask
+        # lan_prob = lan_prob * pre_mask
         sce_prob = sce_prob * pre_mask
 
-        branch_cnt = 5.0
-        prob = sbj_prob + obj_prob + lan_prob + spa_prob + sce_prob
+        # branch_cnt = 5.0
+        # prob = sbj_prob + obj_prob + lan_prob + spa_prob + sce_prob
+
+        branch_cnt = 3.0
+        prob = sbj_prob + obj_prob + sce_prob
 
         if body_feat.sum() != 0:
+
+
             body_score = self.body_branch(body_feat)
             body_prob = sigmoid(body_score)
             body_prob = body_prob * pre_mask
@@ -134,11 +147,12 @@ class FCNet(nn.Module):
         if self.training and pre_label is not None:
             sbj_loss = binary_cross_entropy(sbj_prob, pre_label, size_average=False)
             obj_loss = binary_cross_entropy(obj_prob, pre_label, size_average=False)
-            spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
-            lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
+            # spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
+            # lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
             sce_loss = binary_cross_entropy(sce_prob, pre_label, size_average=False)
 
-            loss = sbj_loss + obj_loss + spa_loss + lan_loss + sce_loss
+            # loss = sbj_loss + obj_loss + spa_loss + lan_loss + sce_loss
+            loss = sbj_loss + obj_loss + sce_loss
             if body_feat.sum() != 0:
                 body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
                 loss += body_loss
