@@ -59,7 +59,7 @@ class VidOR(Dataset):
         spa_feat = self._ext_spatial_feature(inst)
         sbj_feat, obj_feat, sce_feat, body_feat = self._ext_cnn_feature(inst)
 
-        adj_mat = np.ones((9, 9))
+        adj_mat = np.ones((8, 8))
         rowsum = adj_mat.sum(1)
         r_inv = np.power(rowsum, -1).flatten()
         r_inv[np.isinf(r_inv)] = 0.

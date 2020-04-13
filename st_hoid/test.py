@@ -180,7 +180,7 @@ class Tester:
 
     @staticmethod
     def gen_adj_mat():
-        adj_mat = np.ones((9, 9))
+        adj_mat = np.ones((8, 8))
         rowsum = adj_mat.sum(1)
         r_inv = np.power(rowsum, -1).flatten()
         r_inv[np.isinf(r_inv)] = 0.
