@@ -106,7 +106,7 @@ class FCNet(nn.Module):
         sbj_feat = sbj_feat.squeeze(1) + all_vis_feat[:, 0].squeeze(1)
         obj_feat = obj_feat.squeeze(1) + all_vis_feat[:, 1].squeeze(1)
         # sce_feat = sce_feat.squeeze(1) + all_vis_feat[:, 2].squeeze(1)
-        body_feat = body_feat + all_vis_feat[:, 3:]
+        body_feat = body_feat + all_vis_feat[:, 2:]
         # lan_att = self.obj_attention(lan_feat).unsqueeze(2)
         # body_feat = body_feat + body_feat * lan_att
         body_feat = body_feat.view(body_feat.shape[0], -1)
