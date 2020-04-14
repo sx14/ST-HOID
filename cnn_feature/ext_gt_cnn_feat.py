@@ -224,7 +224,7 @@ if __name__ == '__main__':
     fasterRCNN.eval()
 
     image_root = os.path.join(args.data_root, 'Data', 'VID', args.split)
-    feat_root = os.path.join(args.data_root, 'feat_gt', args.split)
+    feat_root = os.path.join(args.data_root, 'feat_gt2', args.split)
     if args.split == 'val':
         split = 'validation'
     elif args.split == 'train':
@@ -271,21 +271,23 @@ if __name__ == '__main__':
                 tid2cate[traj_info['tid']] = traj_info['category']
                 if is_human(traj_info['category']):
                     tid2feat[traj_info['tid']] = np.zeros((num_segs,
-                                                           1 + body_part_num,
                                                            3,
+                                                           1 + body_part_num,
                                                            pool_feat_chnl,
                                                            pool_feat_size,
                                                            pool_feat_size))
                 else:
-                    tid2feat[traj_info['tid']] = np.zeros((num_segs, 1,
+                    tid2feat[traj_info['tid']] = np.zeros((num_segs,
                                                            3,
+                                                           1,
                                                            pool_feat_chnl,
                                                            pool_feat_size,
                                                            pool_feat_size))
             # scene
             tid2cate[scene_tid] = '__scene__'
-            tid2feat[scene_tid] = np.zeros((num_segs, 1,
+            tid2feat[scene_tid] = np.zeros((num_segs,
                                             3,
+                                            1,
                                             pool_feat_chnl,
                                             pool_feat_size,
                                             pool_feat_size))
@@ -379,14 +381,13 @@ if __name__ == '__main__':
                         # end
                         entity_feat0[2] = entity_feat
                     # max-pooling
-                    entity_feat0[1] = np.maximum(entity_feat, entity_feat0[1])
+                    entity_feat0[1:2] = np.maximum(entity_feat, entity_feat0[1:2])
                     tid2feat[tids[ii]][seg_idx] = entity_feat0
 
             for tid in tid2feat:
                 output_path = os.path.join(output_dir, str(tid)+'.bin')
                 with open(output_path, 'wb') as f:
-                    feat = tid2feat[tid].mean(4).mean(3).astype('float32')
-                    # print(feat.shape)
+                    feat = tid2feat[tid].mean(5).mean(4).astype('float32')
                     pickle.dump(feat, f)
 
 

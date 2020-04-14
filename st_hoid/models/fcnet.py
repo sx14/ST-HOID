@@ -62,7 +62,23 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(1024, cate_num))
 
+        self.spa_diff_branch = nn.Sequential(
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(spa_feat_lan, 1024),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(1024, cate_num))
+
         self.sbj_branch = nn.Sequential(
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(sbj_feat_len, sbj_feat_len),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(sbj_feat_len, cate_num))
+
+        self.sbj_diff_branch = nn.Sequential(
             nn.LeakyReLU(),
             nn.Dropout(p=0.5),
             nn.Linear(sbj_feat_len, sbj_feat_len),
@@ -86,7 +102,23 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(obj_feat_len, cate_num))
 
+        self.obj_diff_branch = nn.Sequential(
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(obj_feat_len, obj_feat_len),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(obj_feat_len, cate_num))
+
         self.body_branch = nn.Sequential(
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(body_feat_lan, body_feat_lan),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(body_feat_lan, cate_num))
+
+        self.body_diff_branch = nn.Sequential(
             nn.LeakyReLU(),
             nn.Dropout(p=0.5),
             nn.Linear(body_feat_lan, body_feat_lan),
@@ -96,63 +128,72 @@ class FCNet(nn.Module):
 
     def forward(self, adj_mat, sbj_feat, obj_feat, body_feat, lan_feat, spa_feat, sce_feat, pre_mask, pre_label=None):
         # gcn
-        sbj_feat = sbj_feat.unsqueeze(1)
-        obj_feat = obj_feat.unsqueeze(1)
+        # sbj_feat = sbj_feat.unsqueeze(1)
+        # obj_feat = obj_feat.unsqueeze(1)
         # sce_feat = sce_feat.unsqueeze(1)
-        body_feat = body_feat.view(body_feat.shape[0], 6, -1)
-        all_vis_feat = torch.cat((sbj_feat, obj_feat, body_feat), 1)
-        all_vis_feat = self.gcn(all_vis_feat, adj_mat)
+        # body_feat = body_feat.view(body_feat.shape[0], 6, -1)
+        # all_vis_feat = torch.cat((sbj_feat, obj_feat, body_feat), 1)
+        # all_vis_feat = self.gcn(all_vis_feat, adj_mat)
 
-        sbj_feat = sbj_feat.squeeze(1) + all_vis_feat[:, 0].squeeze(1)
-        obj_feat = obj_feat.squeeze(1) + all_vis_feat[:, 1].squeeze(1)
+        # sbj_feat = sbj_feat.squeeze(1) + all_vis_feat[:, 0].squeeze(1)
+        # obj_feat = obj_feat.squeeze(1) + all_vis_feat[:, 1].squeeze(1)
         # sce_feat = sce_feat.squeeze(1) + all_vis_feat[:, 2].squeeze(1)
-        body_feat = body_feat + all_vis_feat[:, 2:]
+        # body_feat = body_feat + all_vis_feat[:, 2:]
         # lan_att = self.obj_attention(lan_feat).unsqueeze(2)
         # body_feat = body_feat + body_feat * lan_att
-        body_feat = body_feat.view(body_feat.shape[0], -1)
+        # body_feat = body_feat.view(body_feat.shape[0], -1)
 
         # fc
-        sbj_score = self.sbj_branch(sbj_feat)
-        obj_score = self.obj_branch(obj_feat)
         spa_score = self.spa_branch(spa_feat)
         lan_score = self.lan_branch(lan_feat)
-        # sce_score = self.sce_branch(sce_feat)
-        body_score = self.body_branch(body_feat)
+
+        # sce_score = self.sce_branch(sce_feat[:, 1])
+        sbj_score = self.sbj_branch(sbj_feat[:, 1])
+        obj_score = self.obj_branch(obj_feat[:, 1])
+        body_score = self.body_branch(body_feat[:, 1])
+
+        sbj_diff_score = self.sbj_diff_branch(sbj_feat[:, 2] - sbj_feat[:, 0])
+        obj_diff_score = self.obj_diff_branch(obj_feat[:, 2] - obj_feat[:, 0])
+        body_diff_score = self.body_diff_branch(body_feat[:, 2] - body_feat[:, 0])
+
+        sbj_score = sbj_score + sbj_diff_score
+        obj_score = obj_score + obj_diff_score
+        body_score = body_score + body_diff_score
 
         # ef
-        # score = sbj_score + obj_score + spa_score + lan_score + sce_score + body_score
-        # prob = sigmoid(score)
+        score = sbj_score + obj_score + spa_score + lan_score + body_score
+        prob = sigmoid(score)
 
         # lf
-        sbj_prob = sigmoid(sbj_score)
-        obj_prob = sigmoid(obj_score)
-        spa_prob = sigmoid(spa_score)
-        lan_prob = sigmoid(lan_score)
+        # sbj_prob = sigmoid(sbj_score)
+        # obj_prob = sigmoid(obj_score)
+        # spa_prob = sigmoid(spa_score)
+        # lan_prob = sigmoid(lan_score)
         # sce_prob = sigmoid(sce_score)
-        body_prob = sigmoid(body_score)
-        #
-        sbj_prob = sbj_prob * pre_mask
-        obj_prob = obj_prob * pre_mask
-        spa_prob = spa_prob * pre_mask
-        lan_prob = lan_prob * pre_mask
-        # sce_prob = sce_prob * pre_mask
-        body_prob = body_prob * pre_mask
+        # body_prob = sigmoid(body_score)
 
-        branch_cnt = 5.0
-        prob = (sbj_prob + obj_prob + lan_prob + spa_prob + body_prob) / branch_cnt
+        # sbj_prob = sbj_prob * pre_mask
+        # obj_prob = obj_prob * pre_mask
+        # spa_prob = spa_prob * pre_mask
+        # lan_prob = lan_prob * pre_mask
+        # sce_prob = sce_prob * pre_mask
+        # body_prob = body_prob * pre_mask
+
+        # branch_cnt = 5.0
+        # prob = (sbj_prob + obj_prob + lan_prob + spa_prob + body_prob) / branch_cnt
 
         if self.training and pre_label is not None:
             # lf
-            sbj_loss = binary_cross_entropy(sbj_prob, pre_label, size_average=False)
-            obj_loss = binary_cross_entropy(obj_prob, pre_label, size_average=False)
-            spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
-            lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
+            # sbj_loss = binary_cross_entropy(sbj_prob, pre_label, size_average=False)
+            # obj_loss = binary_cross_entropy(obj_prob, pre_label, size_average=False)
+            # spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
+            # lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
             # sce_loss = binary_cross_entropy(sce_prob, pre_label, size_average=False)
-            body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
-            loss = sbj_loss + obj_loss + spa_loss + lan_loss + body_loss
+            # body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
+            # loss = sbj_loss + obj_loss + spa_loss + lan_loss + body_loss
 
             # ef
-            # loss = binary_cross_entropy(prob, pre_label, size_average=False)
+            loss = binary_cross_entropy(prob, pre_label, size_average=False)
         else:
             loss = Variable(torch.FloatTensor(-1))
 
