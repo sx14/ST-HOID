@@ -217,30 +217,21 @@ def resnet152(pretrained=False):
     model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
   return model
 
+
 class resnet(_fasterRCNN):
   def __init__(self, classes, num_layers=101, pretrained=False, class_agnostic=False):
     self.model_path = 'data/pretrained_model/resnet101_caffe.pth'
     self.dout_base_model = 1024
     self.pretrained = pretrained
     self.class_agnostic = class_agnostic
-    self.num_layers = num_layers
 
     _fasterRCNN.__init__(self, classes, class_agnostic)
 
   def _init_modules(self):
     resnet = resnet101()
 
-    if self.num_layers == 18:
-        resnet = resnet18()
-    if self.num_layers == 34:
-        resnet = resnet34()
-    if self.num_layers == 50:
-        resnet = resnet50()
-    if self.num_layers == 152:
-        resnet = resnet152()
-
     if self.pretrained == True:
-      print("Loading pretrained weights from %s" %(self.model_path))
+      print("Loading pretrained weights from %s" % self.model_path)
       state_dict = torch.load(self.model_path)
       resnet.load_state_dict({k:v for k,v in state_dict.items() if k in resnet.state_dict()})
 
@@ -248,24 +239,54 @@ class resnet(_fasterRCNN):
     self.RCNN_base = nn.Sequential(resnet.conv1, resnet.bn1,resnet.relu,
       resnet.maxpool,resnet.layer1,resnet.layer2,resnet.layer3)
 
+    import copy
     self.RCNN_top = nn.Sequential(resnet.layer4)
+    # self.iRCNN_top = nn.Sequential(resnet.layer4)
+    # self.hRCNN_top = nn.Sequential(copy.deepcopy(resnet.layer4))
+    # self.oRCNN_top = nn.Sequential(copy.deepcopy(resnet.layer4))
+    # self.pRCNN_top = nn.Sequential(copy.deepcopy(resnet.layer4))
+    # self.sRCNN_top = nn.Sequential(copy.deepcopy(resnet.layer4))
 
-    self.RCNN_cls_score = nn.Linear(2048, self.n_classes)
-    if self.class_agnostic:
-      self.RCNN_bbox_pred = nn.Linear(2048, 4)
-    else:
-      self.RCNN_bbox_pred = nn.Linear(2048, 4 * self.n_classes)
+    # self.iRCNN_cls_score = nn.Sequential(
+    #   nn.Linear(2048, 2048),
+    #   nn.LeakyReLU(),
+    #   nn.Dropout(p=0.5),
+    #   nn.Linear(2048, self.n_classes))
+
+    self.hRCNN_cls_score = nn.Sequential(
+      nn.Linear(2048, 2048),
+      nn.LeakyReLU(),
+      nn.Dropout(p=0.5),
+      nn.Linear(2048, self.n_classes))
+
+    self.oRCNN_cls_score = nn.Sequential(
+      nn.Linear(2048, 2048),
+      nn.LeakyReLU(),
+      nn.Dropout(p=0.5),
+      nn.Linear(2048, self.n_classes))
+
+    # self.pRCNN_cls_score = nn.Sequential(
+    #   nn.Linear(2048 * 6, 4096),
+    #   nn.LeakyReLU(),
+    #   nn.Dropout(p=0.5),
+    #   nn.Linear(4096, self.n_classes))
+    #
+    # self.sRCNN_cls_score = nn.Sequential(
+    #   nn.Linear(2048 * 5, 4096),
+    #   nn.LeakyReLU(),
+    #   nn.Dropout(p=0.5),
+    #   nn.Linear(4096, self.n_classes))
 
     # Fix blocks
     for p in self.RCNN_base[0].parameters(): p.requires_grad=False
     for p in self.RCNN_base[1].parameters(): p.requires_grad=False
 
     assert (0 <= cfg.RESNET.FIXED_BLOCKS < 4)
-    if cfg.RESNET.FIXED_BLOCKS >= 3:
+    if cfg.RESNET.FIXED_BLOCKS >= 3 or True:
       for p in self.RCNN_base[6].parameters(): p.requires_grad=False
-    if cfg.RESNET.FIXED_BLOCKS >= 2:
+    if cfg.RESNET.FIXED_BLOCKS >= 2 or True:
       for p in self.RCNN_base[5].parameters(): p.requires_grad=False
-    if cfg.RESNET.FIXED_BLOCKS >= 1:
+    if cfg.RESNET.FIXED_BLOCKS >= 1 or True:
       for p in self.RCNN_base[4].parameters(): p.requires_grad=False
 
     def set_bn_fix(m):
@@ -275,6 +296,11 @@ class resnet(_fasterRCNN):
 
     self.RCNN_base.apply(set_bn_fix)
     self.RCNN_top.apply(set_bn_fix)
+    # self.iRCNN_top.apply(set_bn_fix)
+    # self.hRCNN_top.apply(set_bn_fix)
+    # self.oRCNN_top.apply(set_bn_fix)
+    # self.pRCNN_top.apply(set_bn_fix)
+    # self.sRCNN_top.apply(set_bn_fix)
 
   def train(self, mode=True):
     # Override train so that the training mode is set as we want
@@ -292,11 +318,30 @@ class resnet(_fasterRCNN):
 
       self.RCNN_base.apply(set_bn_eval)
       self.RCNN_top.apply(set_bn_eval)
+      # self.iRCNN_top.apply(set_bn_eval)
+      # self.hRCNN_top.apply(set_bn_eval)
+      # self.oRCNN_top.apply(set_bn_eval)
+      # self.pRCNN_top.apply(set_bn_eval)
+      # self.sRCNN_top.apply(set_bn_eval)
 
-  def _head_to_tail_no_avg(self, pool5):
-    fc7 = self.RCNN_top(pool5)
-    return fc7
+  # def _ihead_to_tail(self, pool5):
+  #   fc7 = self.iRCNN_top(pool5).mean(3).mean(2)
+  #   return fc7
 
-  def _head_to_tail(self, pool5):
+  def _hhead_to_tail(self, pool5):
     fc7 = self.RCNN_top(pool5).mean(3).mean(2)
     return fc7
+
+  def _ohead_to_tail(self, pool5):
+    fc7 = self.RCNN_top(pool5).mean(3).mean(2)
+    return fc7
+
+  # def _phead_to_tail(self, pool5):
+  #   fc7_all = self.pRCNN_top(pool5).mean(3).mean(2)
+  #   fc7 = fc7_all.view(-1, fc7_all.shape[1] * 6)
+  #   return fc7
+  #
+  # def _shead_to_tail(self, pool5):
+  #   fc7_all = self.sRCNN_top(pool5).mean(3).mean(2)
+  #   fc7 = fc7_all.view(-1)
+  #   return fc7
