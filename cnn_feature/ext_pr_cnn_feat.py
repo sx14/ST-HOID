@@ -402,9 +402,8 @@ if __name__ == '__main__':
                 if seg_frm_idx == 0:
                     # start
                     entity_feat0[0] = entity_feat
-                else:
-                    # end
-                    entity_feat0[2] = entity_feat
+                # end
+                entity_feat0[2] = entity_feat
                 # max-pooling
                 entity_feat0[1:2] = np.maximum(entity_feat, entity_feat0[1:2])
                 tid2feat[tids[ii]][seg_idx] = entity_feat0
@@ -412,5 +411,5 @@ if __name__ == '__main__':
         for tid in tid2feat:
             output_path = os.path.join(output_dir, str(tid) + '.bin')
             with open(output_path, 'wb') as f:
-                feat = tid2feat[tid].mean(4).mean(3).astype('float32')
+                feat = tid2feat[tid].mean(5).mean(4).astype('float32')
                 pickle.dump(feat, f)

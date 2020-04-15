@@ -377,9 +377,8 @@ if __name__ == '__main__':
                     if seg_frm_idx == 0:
                         # start
                         entity_feat0[0] = entity_feat
-                    else:
-                        # end
-                        entity_feat0[2] = entity_feat
+                    # end
+                    entity_feat0[2] = entity_feat
                     # max-pooling
                     entity_feat0[1:2] = np.maximum(entity_feat, entity_feat0[1:2])
                     tid2feat[tids[ii]][seg_idx] = entity_feat0
