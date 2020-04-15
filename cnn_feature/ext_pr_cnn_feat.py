@@ -52,7 +52,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train a Fast R-CNN network')
     parser.add_argument('--dataset', dest='dataset',
                         help='training dataset',
-                        default='coco', type=str)
+                        default='vidor_hoid_mini', type=str)
     parser.add_argument('--cfg', dest='cfg_file',
                         help='optional config file',
                         default='cfgs/res101.yml', type=str)
@@ -88,10 +88,10 @@ def parse_args():
                         default=1, type=int)
     parser.add_argument('--checkepoch', dest='checkepoch',
                         help='checkepoch to load network',
-                        default=10, type=int)
+                        default=6, type=int)
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load network',
-                        default=9771, type=int)
+                        default=18131, type=int)
     parser.add_argument('--r', dest='resume',
                         help='resume checkpoint or not',
                         default=False, type=bool)
@@ -194,9 +194,9 @@ if __name__ == '__main__':
     if not os.path.exists(input_dir):
         raise Exception('There is no input directory for loading network from ' + input_dir)
     load_name = os.path.join(input_dir,
-                             'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
+                             'ho-rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch, args.checkpoint))
 
-    pascal_classes = np.asarray([str(i) for i in range(81)])
+    pascal_classes = np.asarray([str(i) for i in range(30)])
 
     # initialize the network here.
     if args.net == 'vgg16':
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     fasterRCNN.eval()
 
     image_root = os.path.join(args.data_root, 'Data', 'VID', args.split)
-    feat_root = os.path.join(args.data_root, 'feat_pr', args.split)
+    feat_root = os.path.join(args.data_root, 'feat_gt2', args.split)
     if args.split == 'val':
         split = 'validation'
     elif args.split == 'train':
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     seg_len = 10
     scene_tid = -1
 
-    det_path = os.path.join(args.data_root, 'object_trajectories_%s_det_with_pose.json' % args.split)
+    det_path = os.path.join(args.data_root, 'object_trajectories_%s_gt2det_with_pose.json' % args.split)
     with open(det_path) as f:
         all_trajs = json.load(f)['results']
 
@@ -298,19 +298,23 @@ if __name__ == '__main__':
             tid2cate[tid] = traj['category']
             if is_human(traj['category']):
                 tid2feat[tid] = np.zeros((num_segs,
+                                          3,
                                           1 + body_part_num,
                                           pool_feat_chnl,
                                           pool_feat_size,
                                           pool_feat_size))
             else:
                 tid2feat[tid] = np.zeros((num_segs,
+                                          3,
                                           1,
                                           pool_feat_chnl,
                                           pool_feat_size,
                                           pool_feat_size))
         # scene
         tid2cate[scene_tid] = '__scene__'
-        tid2feat[scene_tid] = np.zeros((num_segs, 1,
+        tid2feat[scene_tid] = np.zeros((num_segs,
+                                        3,
+                                        1,
                                         pool_feat_chnl,
                                         pool_feat_size,
                                         pool_feat_size))
@@ -318,6 +322,7 @@ if __name__ == '__main__':
         fid2dets = load_frame_dets(vid_trajs)
         for frm_idx in range(len(fid2dets)):
             seg_idx = int(frm_idx / seg_len)
+            seg_frm_idx = frm_idx - seg_idx * seg_len
             boxes = [[frm_det['bbox']['xmin'],
                       frm_det['bbox']['ymin'],
                       frm_det['bbox']['xmax'],
@@ -394,8 +399,15 @@ if __name__ == '__main__':
                         entity_feat = np.concatenate((entity_feat, body_part_feats))
 
                 entity_feat0 = tid2feat[tids[ii]][seg_idx]
-                entity_feat = np.maximum(entity_feat, entity_feat0)
-                tid2feat[tids[ii]][seg_idx] = entity_feat
+                if seg_frm_idx == 0:
+                    # start
+                    entity_feat0[0] = entity_feat
+                else:
+                    # end
+                    entity_feat0[2] = entity_feat
+                # max-pooling
+                entity_feat0[1:2] = np.maximum(entity_feat, entity_feat0[1:2])
+                tid2feat[tids[ii]][seg_idx] = entity_feat0
 
         for tid in tid2feat:
             output_path = os.path.join(output_dir, str(tid) + '.bin')

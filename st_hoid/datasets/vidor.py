@@ -20,11 +20,11 @@ class VidOR(Dataset):
         self.split = split
 
         if split == 'train':
-            self.feat_root = os.path.join(ds_root, 'feat_gt', 'train')
+            self.feat_root = os.path.join(ds_root, 'feat_gt2', 'train')
             self.data_root = os.path.join(ds_root, 'Data', 'VID', 'train')
             self.anno_root = os.path.join(ds_root, 'anno_with_pose', 'training')
         elif split == 'val':
-            self.feat_root = os.path.join(ds_root, 'feat_gt', 'val')
+            self.feat_root = os.path.join(ds_root, 'feat_gt2', 'val')
             self.data_root = os.path.join(ds_root, 'Data', 'VID', 'val')
             self.anno_root = os.path.join(ds_root, 'anno_with_pose', 'validation')
         else:

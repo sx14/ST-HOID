@@ -36,7 +36,7 @@ class FCNet(nn.Module):
 
         super(FCNet, self).__init__()
 
-        self.name = 'base+prior+eb+pb+gcn'
+        self.name = 'base+eb'
         self.training = False
 
         self.gcn = GCN(2048, 2048, 2048, 0.5)
@@ -148,20 +148,20 @@ class FCNet(nn.Module):
         lan_score = self.lan_branch(lan_feat)
 
         # sce_score = self.sce_branch(sce_feat[:, 1])
-        sbj_score = self.sbj_branch(sbj_feat[:, 1])
-        obj_score = self.obj_branch(obj_feat[:, 1])
-        body_score = self.body_branch(body_feat[:, 1])
+        sbj_score = self.sbj_branch(sbj_feat[:, 0])
+        obj_score = self.obj_branch(obj_feat[:, 0])
+        # body_score = self.body_branch(body_feat[:, 1])
 
-        sbj_diff_score = self.sbj_diff_branch(sbj_feat[:, 2] - sbj_feat[:, 0])
-        obj_diff_score = self.obj_diff_branch(obj_feat[:, 2] - obj_feat[:, 0])
-        body_diff_score = self.body_diff_branch(body_feat[:, 2] - body_feat[:, 0])
+        # sbj_diff_score = self.sbj_diff_branch(sbj_feat[:, 2] - sbj_feat[:, 0])
+        # obj_diff_score = self.obj_diff_branch(obj_feat[:, 2] - obj_feat[:, 0])
+        # body_diff_score = self.body_diff_branch(body_feat[:, 2] - body_feat[:, 0])
 
-        sbj_score = sbj_score + sbj_diff_score
-        obj_score = obj_score + obj_diff_score
-        body_score = body_score + body_diff_score
+        # sbj_score = sbj_score + sbj_diff_score
+        # obj_score = obj_score + obj_diff_score
+        # body_score = body_score + body_diff_score
 
         # ef
-        score = sbj_score + obj_score + spa_score + lan_score + body_score
+        score = sbj_score + obj_score + spa_score + lan_score
         prob = sigmoid(score)
 
         # lf

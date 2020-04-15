@@ -1,7 +1,7 @@
 # If want to input None, use !!null
 
 # meta
-exp: fc
+exp: fc2
 dataset: vidor_hoid_mini
 use_gpu: True
 seg_len: 10
@@ -27,7 +27,7 @@ test_traj_det: object_trajectories_val_det_with_pose.json
 test_output_root: results
 test_max_per_video: 2000
 
-test_use_gt_obj: False
+test_use_gt_obj: True
 test_traj_gt: object_trajectories_val_gt2det_with_pose.json
 
 # paths

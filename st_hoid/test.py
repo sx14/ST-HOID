@@ -163,10 +163,10 @@ class Tester:
         feat_len = tid2feat[rela_segs[0]['sbj_tid']].shape[-1]
         body_part_num = tid2feat[rela_segs[0]['sbj_tid']].shape[2] - 1
 
-        sbj_feat = np.zeros((len(rela_segs), feat_len))
-        obj_feat = np.zeros((len(rela_segs), feat_len))
-        sce_feat = np.zeros((len(rela_segs), feat_len))
-        body_feat = np.zeros((len(rela_segs), feat_len * body_part_num))
+        sbj_feat = np.zeros((len(rela_segs), 3, feat_len))
+        obj_feat = np.zeros((len(rela_segs), 3, feat_len))
+        sce_feat = np.zeros((len(rela_segs), 3, feat_len))
+        body_feat = np.zeros((len(rela_segs), 3, feat_len * body_part_num))
 
         for i, rela_seg in enumerate(rela_segs):
             sbj_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], :, 0]
@@ -420,9 +420,9 @@ if __name__ == '__main__':
     # init tester
     print('---- Testing start ----')
     if not use_gt_obj:
-        feat_root = '../data/%s/feat_pr/%s' % (dataset_name, cfg['test_split'])
+        feat_root = '../data/%s/feat_pr2/%s' % (dataset_name, cfg['test_split'])
     else:
-        feat_root = '../data/%s/feat_gt/%s' % (dataset_name, cfg['test_split'])
+        feat_root = '../data/%s/feat_gt2/%s' % (dataset_name, cfg['test_split'])
 
     output_root = os.path.join(cfg['test_output_root'], dataset_name)
     tester = Tester(dataset, model, test_trajs, cfg['seg_len'],
