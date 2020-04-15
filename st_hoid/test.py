@@ -161,7 +161,7 @@ class Tester:
     @staticmethod
     def ext_toi_feat(rela_segs, tid2feat):
         feat_len = tid2feat[rela_segs[0]['sbj_tid']].shape[-1]
-        body_part_num = tid2feat[rela_segs[0]['sbj_tid']].shape[1] - 1
+        body_part_num = tid2feat[rela_segs[0]['sbj_tid']].shape[2] - 1
 
         sbj_feat = np.zeros((len(rela_segs), feat_len))
         obj_feat = np.zeros((len(rela_segs), feat_len))
@@ -169,12 +169,12 @@ class Tester:
         body_feat = np.zeros((len(rela_segs), feat_len * body_part_num))
 
         for i, rela_seg in enumerate(rela_segs):
-            sbj_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 0]
-            obj_feat[i] = tid2feat[rela_seg['obj_tid']][rela_seg['seg_id'], 0]
-            sce_feat[i] = tid2feat[rela_seg['sce_tid']][rela_seg['seg_id'], 0]
-            body_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], 1:].reshape(-1)
+            sbj_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], :, 0]
+            obj_feat[i] = tid2feat[rela_seg['obj_tid']][rela_seg['seg_id'], :, 0]
+            sce_feat[i] = tid2feat[rela_seg['sce_tid']][rela_seg['seg_id'], :, 0]
+            body_feat[i] = tid2feat[rela_seg['sbj_tid']][rela_seg['seg_id'], :, 1:].reshape(3, -1)
             if body_feat[i].sum() == 0:
-                body_feat[i] = np.tile(sbj_feat[i], body_part_num)
+                body_feat[i] = np.tile(sbj_feat[i], (1, body_part_num))
 
         return sbj_feat, obj_feat, sce_feat, body_feat
 
