@@ -103,7 +103,7 @@ class Tester:
             obj_cate_idx = self.dataset.obj_cate2idx[rela_seg['obj_cls']]
             sbj_cate_vec = self.dataset.obj_vecs[sbj_cate_idx]
             obj_cate_vec = self.dataset.obj_vecs[obj_cate_idx]
-            lan_feat[i] = np.concatenate((sbj_cate_vec, obj_cate_vec))
+            lan_feat[i] = np.concatenate((obj_cate_vec, sbj_cate_vec))
         return lan_feat
 
     @staticmethod
@@ -414,6 +414,7 @@ if __name__ == '__main__':
     model = FCNet(dataset.category_num('predicate'))
     model_weight_path = os.path.join(cfg['weight_root'], cfg['dataset'], cfg['exp'],
                                      '%s_%d.pkl' % (model.name, cfg['test_epoch']))
+    print model_weight_path
     model.load_weight(model_weight_path)
     model.eval()
 
