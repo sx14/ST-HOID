@@ -36,7 +36,7 @@ class FCNet(nn.Module):
 
         super(FCNet, self).__init__()
 
-        self.name = 'base+prior+pb'
+        self.name = 'eef+base+prior+pb'
         self.training = False
 
         self.gcn = GCN(2048, 2048, 2048, 0.5)
@@ -101,24 +101,32 @@ class FCNet(nn.Module):
         lan_score = self.lan_branch(lan_feat)
         body_score = self.body_branch(body_feat)
 
-        spa_prob = sigmoid(spa_score)
-        lan_prob = sigmoid(lan_score)
-        body_prob = sigmoid(body_score)
+        # ef
+        score = spa_score + lan_score + body_score
+        prob = sigmoid(score)
+        prob = prob * pre_mask
 
-        # CTX
-        spa_prob = spa_prob * pre_mask
-        lan_prob = lan_prob * pre_mask
-        body_prob = body_prob * pre_mask
-
-        branch_cnt = 3.0
-        prob = (lan_prob + spa_prob + body_prob) / branch_cnt
+        # spa_prob = sigmoid(spa_score)
+        # lan_prob = sigmoid(lan_score)
+        # body_prob = sigmoid(body_score)
+        #
+        # # CTX
+        # spa_prob = spa_prob * pre_mask
+        # lan_prob = lan_prob * pre_mask
+        # body_prob = body_prob * pre_mask
+        #
+        # branch_cnt = 3.0
+        # prob = (lan_prob + spa_prob + body_prob) / branch_cnt
 
         if self.training and pre_label is not None:
             # lf
-            spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
-            lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
-            body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
-            loss = spa_loss + lan_loss + body_loss
+            # spa_loss = binary_cross_entropy(spa_prob, pre_label, size_average=False)
+            # lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
+            # body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
+            # loss = spa_loss + lan_loss + body_loss
+
+            # ef
+            loss = binary_cross_entropy(prob, pre_label, size_average=False)
         else:
             loss = Variable(torch.FloatTensor(-1))
 

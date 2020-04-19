@@ -103,7 +103,7 @@ class Tester:
             obj_cate_idx = self.dataset.obj_cate2idx[rela_seg['obj_cls']]
             sbj_cate_vec = self.dataset.obj_vecs[sbj_cate_idx]
             obj_cate_vec = self.dataset.obj_vecs[obj_cate_idx]
-            lan_feat[i] = np.concatenate((sbj_cate_vec, obj_cate_vec))
+            lan_feat[i] = np.concatenate((obj_cate_vec, sbj_cate_vec))
         return lan_feat
 
     @staticmethod
