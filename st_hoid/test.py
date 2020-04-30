@@ -237,11 +237,11 @@ class Tester:
         # get top 10 predictions
         for i in range(probs.shape[0]):
             rela_probs = probs[i]
-            rela_cls_top10 = np.argsort(rela_probs)[::-1][:10]
+            rela_cls_top = np.where(rela_probs > 0)[0]
             rela_seg = rela_segments[i]
-            for t in range(10):
+            for t in range(len(rela_cls_top)):
                 rela_seg_copy = copy.deepcopy(rela_seg)
-                pred_pre_idx = rela_cls_top10[t]
+                pred_pre_idx = rela_cls_top[t]
                 pred_pre_scr = rela_probs[pred_pre_idx]
                 pred_pre = self.dataset.pre_cates[pred_pre_idx]
                 rela_seg_copy['pre_cls'] = pred_pre

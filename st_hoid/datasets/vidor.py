@@ -2,6 +2,7 @@ import os
 import time
 import json
 import pickle
+from tqdm import tqdm
 from random import shuffle
 from copy import deepcopy
 from math import log, e
@@ -242,26 +243,32 @@ class VidOR(Dataset):
         obj_cates = set()
         pre_cates = set()
         int_cates = set()
-        train_anno_root = os.path.join(self.dataset_root, 'anno_with_pose', 'training')
-        for anno_file in os.listdir(train_anno_root):
-            anno_path = os.path.join(train_anno_root, anno_file)
-            with open(anno_path) as f:
-                anno = json.load(f)
+        print('Collecting categories ...')
+        time.sleep(2)
+        splits = ['training', 'validation']
+        for split in splits:
+            anno_root = os.path.join(self.dataset_root, 'anno_with_pose', split)
+            for pkg_id in tqdm(os.listdir(anno_root)):
+                pkg_root = os.path.join(anno_root, pkg_id)
+                for anno_file in os.listdir(pkg_root):
+                    anno_path = os.path.join(pkg_root, anno_file)
+                    with open(anno_path) as f:
+                        anno = json.load(f)
 
-            tid2obj = {}
-            objs = anno['subject/objects']
-            for obj in objs:
-                tid2obj[obj['tid']] = obj['category']
-                obj_cates.add(obj['category'])
+                    tid2obj = {}
+                    objs = anno['subject/objects']
+                    for obj in objs:
+                        tid2obj[obj['tid']] = obj['category']
+                        obj_cates.add(obj['category']+'\n')
 
-            relas = anno['relation_instances']
-            for rela in relas:
-                obj_tid = rela['object_tid']
-                obj_cate = tid2obj[obj_tid]
-                pre_cate = rela['predicate']
-                pre_cates.add(pre_cate)
-                int_cate = pre_cate+'+'+obj_cate
-                int_cates.add(int_cate)
+                    relas = anno['relation_instances']
+                    for rela in relas:
+                        obj_tid = rela['object_tid']
+                        obj_cate = tid2obj[obj_tid]
+                        pre_cate = rela['predicate']
+                        pre_cates.add(pre_cate+'\n')
+                        int_cate = pre_cate+'+'+obj_cate
+                        int_cates.add(int_cate+'\n')
 
         obj_cate_path = os.path.join(self.dataset_root, 'object_labels.txt')
         pre_cate_path = os.path.join(self.dataset_root, 'predicate_labels.txt')
