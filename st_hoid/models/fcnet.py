@@ -39,13 +39,6 @@ class FCNet(nn.Module):
         self.name = 'base+prior+pb'
         self.training = False
 
-        self.gcn = GCN(2048, 2048, 2048, 0.5)
-
-        self.obj_attention = nn.Sequential(
-            nn.Linear(300, 512),
-            nn.LeakyReLU(),
-            nn.Linear(512, 6))
-
         self.lan_branch = nn.Sequential(
             nn.LeakyReLU(),
             nn.Dropout(p=0.5),
@@ -86,6 +79,14 @@ class FCNet(nn.Module):
             nn.Dropout(p=0.5),
             nn.Linear(obj_feat_len, cate_num))
 
+        self.trs_branch = nn.Sequential(
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(obj_feat_len, obj_feat_len),
+            nn.LeakyReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(obj_feat_len, cate_num))
+
         self.body_branch = nn.Sequential(
             nn.LeakyReLU(),
             nn.Dropout(p=0.5),
@@ -109,12 +110,12 @@ class FCNet(nn.Module):
         spa_prob = sigmoid(spa_score)
         lan_prob = sigmoid(lan_score)
         body_prob = sigmoid(body_score)
-
-        # CTX
+        #
+        # # CTX
         spa_prob = spa_prob * pre_mask
         lan_prob = lan_prob * pre_mask
         body_prob = body_prob * pre_mask
-
+        #
         branch_cnt = 3.0
         prob = (lan_prob + spa_prob + body_prob) / branch_cnt
 
@@ -124,6 +125,7 @@ class FCNet(nn.Module):
             lan_loss = binary_cross_entropy(lan_prob, pre_label, size_average=False)
             body_loss = binary_cross_entropy(body_prob, pre_label, size_average=False)
             loss = spa_loss + lan_loss + body_loss
+
             # ef
             # loss = binary_cross_entropy(prob, pre_label, size_average=False)
         else:

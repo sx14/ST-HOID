@@ -35,6 +35,8 @@ class VidOR(Dataset):
         self.pre_cates = None
         self.obj_cate2idx = None
         self.pre_cate2idx = None
+        self.int_cates = None
+        self.int_cate2idx = None
         self.sbj_cates = {'baby', 'adult', 'child'}
         self._load_category_sets()
 
@@ -236,9 +238,51 @@ class VidOR(Dataset):
             obj_vecs[i] = vec
         return obj_vecs
 
+    def _collect_category_sets(self):
+        obj_cates = set()
+        pre_cates = set()
+        int_cates = set()
+        train_anno_root = os.path.join(self.dataset_root, 'anno_with_pose', 'training')
+        for anno_file in os.listdir(train_anno_root):
+            anno_path = os.path.join(train_anno_root, anno_file)
+            with open(anno_path) as f:
+                anno = json.load(f)
+
+            tid2obj = {}
+            objs = anno['subject/objects']
+            for obj in objs:
+                tid2obj[obj['tid']] = obj['category']
+                obj_cates.add(obj['category'])
+
+            relas = anno['relation_instances']
+            for rela in relas:
+                obj_tid = rela['object_tid']
+                obj_cate = tid2obj[obj_tid]
+                pre_cate = rela['predicate']
+                pre_cates.add(pre_cate)
+                int_cate = pre_cate+'+'+obj_cate
+                int_cates.add(int_cate)
+
+        obj_cate_path = os.path.join(self.dataset_root, 'object_labels.txt')
+        pre_cate_path = os.path.join(self.dataset_root, 'predicate_labels.txt')
+        int_cate_path = os.path.join(self.dataset_root, 'interaction_labels.txt')
+
+        with open(obj_cate_path, 'w') as f:
+            f.writelines(sorted(list(obj_cates)))
+
+        with open(pre_cate_path, 'w') as f:
+            f.writelines(sorted(list(pre_cates)))
+
+        with open(int_cate_path, 'w') as f:
+            f.writelines(sorted(list(int_cates)))
+
     def _load_category_sets(self):
         obj_cate_path = os.path.join(self.dataset_root, 'object_labels.txt')
         pre_cate_path = os.path.join(self.dataset_root, 'predicate_labels.txt')
+        int_cate_path = os.path.join(self.dataset_root, 'interaction_labels.txt')
+
+        if not (os.path.exists(obj_cate_path) and os.path.exists(pre_cate_path) and os.path.exists(int_cate_path)):
+            self._collect_category_sets()
 
         with open(obj_cate_path) as f:
             # 0 base
@@ -248,6 +292,10 @@ class VidOR(Dataset):
             # 1 base (with "no_interaction")
             self.pre_cates = ['__no_interaction__'] + [line.strip() for line in f.readlines()]
             self.pre_cate2idx = {cate: idx for idx, cate in enumerate(self.pre_cates)}
+        with open(int_cate_path) as f:
+            # N obj_cate base (with "__no_interaction__obj")
+            self.int_cates = ['__no_interaction__+'+obj_cate for obj_cate in self.obj_cates] + [line.strip() for line in f.readlines()]
+            self.int_cate2idx = {cate: idx for idx, cate in enumerate(self.int_cates)}
 
     @staticmethod
     def _load_trajectories(org_trajs, vid_info):

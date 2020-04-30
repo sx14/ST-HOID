@@ -297,6 +297,7 @@ class Tester:
                         break
 
                 curr_segment['pre_scr'] = sum(curr_scores) / len(curr_scores)
+                curr_segment['seg_num'] = len(curr_scores)
                 rela_instances.append(curr_segment)
         return rela_instances
 
@@ -305,6 +306,7 @@ class Tester:
         rela_cands = [rela_cand for rela_cand in rela_cands if rela_cand['pre_cls'] != '__no_interaction__']
         for rela_cand in rela_cands:
             rela_cand['score'] = rela_cand['sbj_scr'] * rela_cand['obj_scr'] * rela_cand['pre_scr']
+        rela_cands = [rela_cand for rela_cand in rela_cands if rela_cand['seg_num'] >= 3]
         sorted_cands = sorted(rela_cands, key=lambda rela: rela['score'], reverse=True)
         return sorted_cands[:max_per_video]
 
